@@ -22,7 +22,6 @@ class NNMixing:
 
         return min_idx
 
-
     def createMix(self):
         mix = []
         current_idx = self.starting_track_idx
