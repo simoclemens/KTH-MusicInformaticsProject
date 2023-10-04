@@ -6,7 +6,8 @@ import librosa
 class AudioDataset(Dataset):
     def __init__(self, audio_folder, analysis_folder, transform=None, time_window = 60): 
         self.audio_folder = audio_folder
-        self.audio_file_list = os.listdir(audio_folder)
+        audio_file_list = os.listdir(audio_folder)
+        self.audio_file_list = [file_name.split(".")[0] for file_name in audio_file_list]
         self.analysis_folder = analysis_folder
         self.transform = transform
         self.time_window = time_window # now using 60 seconds as default
@@ -17,34 +18,28 @@ class AudioDataset(Dataset):
         self.key_mapping = {keys[i]: i for i in range(24)}
 
     def __len__(self):
-        return len(self.file_list)
+        return len(self.audio_file_list)
     
     def __getitem__(self, idx):
-        audio_file_name = self.file_list[idx]
+        audio_file_name = self.audio_file_list[idx]
         audio_file_path = os.path.join(self.audio_folder, audio_file_name)
         audio_features = self.pair_audio_with_features(audio_file_name)
 
         audio_data, sr = librosa.load(audio_file_path, sr=None)
         frame_length = int(self.time_window * sr)
-        num_frames = len(audio_data) // frame_length
-
-        chromagrams = []
-        #TODO: check if computation of chromagram is correct or if we're using the long way like in labs
-        for frame_idx in range(num_frames):
-            frame_audio = audio_data[frame_idx * frame_length: (frame_idx + 1) * frame_length]
-            chromagram = librosa.feature.chroma_stft(y=frame_audio, sr=sr, n_chroma=24) # check if this is correct
-            chromagrams.append(chromagram)
-
+        num_frames = len(audio_data) // frame_length 
+        audio_data = audio_data[:num_frames * frame_length] # only keep the first num_frames * frame_length samples
+        chromagram = librosa.feature.chroma_stft(y=audio_data, sr=sr, n_fft=2048, hop_length=512)
         key, bpm = audio_features[audio_file_name]
         key_label = self.key_to_label(key)
 
         #also returing bpm?
-        return chromagrams, key_label
+        return chromagram, key_label
 
 
     # pair each file with its annotations
     def pair_audio_with_features(self, file_name):
-        analysis_full_path = os.path.join(self.analysis_folder, file_name) + "_analysis.json"
+        analysis_full_path = os.path.join(self.analysis_folder, file_name)+ "_analysis.json"
         key = ""
         bpm = -1
         with open(analysis_full_path) as f:
@@ -67,3 +62,15 @@ if __name__ == "__main__":
     #test
     dataset = AudioDataset("audio/wav", "ac_analysis", time_window=60)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
+
+    dict = {}
+    for i in range (0,500):
+        dic_elem = dataset.pair_audio_with_features(dataset.audio_file_list[i])
+        dict.update (dic_elem)
+    key_list=[]
+    for dic_elem in dict:
+        print(dic_elem, dict[dic_elem])
+        if key_list.count(dict[dic_elem][0]) == 0:
+            key_list.append(dict[dic_elem][0])
+        
+    print(len(key_list))
