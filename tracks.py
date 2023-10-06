@@ -38,9 +38,9 @@ class TrackFeatures:
         self.beat = beat
 
     def extractKey(self):
-        if self.beat_mode == "determ":
+        if self.key_mode == "determ":
             self.determExtractKey()
-        elif self.beat_mode == "nn":
+        elif self.key_mode == "nn":
             pass
 
     def dynamicBeatExtraction(self):
@@ -104,8 +104,6 @@ class TrackFeatures:
                 if second_best_corr is None or corr > second_best_corr:
                     self.second_key = key
                     second_best_corr = corr
-
-
 
 
 
