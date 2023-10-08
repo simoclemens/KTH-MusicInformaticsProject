@@ -1,5 +1,7 @@
 import librosa
-audio1, sr1 = librosa.load("Q1.wav")
-bpm, beat = librosa.beat.beat_track(y=audio1, sr=sr1)
+from beatfinder import nnBeatExtraction
+
+path = "samples\\test1.wav"
+bpm, beat = nnBeatExtraction(path)
 print(bpm)
 print(beat)
