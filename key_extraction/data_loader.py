@@ -23,14 +23,15 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, idx):
         audio_file_name = self.audio_file_list[idx]
-        audio_file_path = os.path.join(self.audio_folder, audio_file_name)
-        audio_features = self.pair_audio_with_features(audio_file_name)
+        audio_file_path = os.path.join(self.audio_folder, audio_file_name) + ".wav.wav"
 
-        audio_data, sr = librosa.load(audio_file_path, sr=22050)
+        audio_data, sr = librosa.load(audio_file_path, duration = self.time_window, sr=22050)
         frame_length = int(self.time_window * sr)
         num_frames = len(audio_data) // frame_length
         audio_data = audio_data[:num_frames * frame_length]  # only keep the first num_frames * frame_length samples
         chromagram = librosa.feature.chroma_stft(y=audio_data, sr=sr, n_fft=2048, hop_length=512)
+
+        audio_features = self.pair_audio_with_features(audio_file_name)
         key, bpm = audio_features[audio_file_name]
         key_label = self.key_to_label(key)
 
@@ -62,7 +63,7 @@ class AudioDataLoader(DataLoader):
 
 if __name__ == "__main__":
     # test
-    dataset = AudioDataset("audio/wav", "ac_analysis", time_window=60)
+    dataset = AudioDataset("audio", "ac_analysis", time_window=60)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
 
     dict = {}
@@ -71,8 +72,6 @@ if __name__ == "__main__":
         dict.update(dic_elem)
     key_list = []
     for dic_elem in dict:
-        print(dic_elem, dict[dic_elem])
         if key_list.count(dict[dic_elem][0]) == 0:
             key_list.append(dict[dic_elem][0])
-
-    print(len(key_list))
+    dataset.__getitem__(100)
