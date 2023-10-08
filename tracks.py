@@ -1,6 +1,6 @@
 from keyfinder import TonalFragment
 import librosa
-from BeatNet.BeatNet import BeatNet
+# from BeatNet.BeatNet import BeatNet
 import numpy as np
 
 
@@ -22,10 +22,11 @@ class TrackFeatures:
         self.selected = True
 
     def extractFeatures(self):
-        self.extractBeat()
-        self.extractKey()
+        bpm, beat = self.extractBeatAndBpm()
+        key = self.extractKey()
+        return bpm, beat, key
 
-    def extractBeat(self):
+    def extractBeatAndBpm(self):
         bpm = None
         beat = None
 
@@ -36,25 +37,27 @@ class TrackFeatures:
 
         self.bpm = bpm
         self.beat = beat
+        return self.bpm, self.beat
+        
 
     def extractKey(self):
         if self.key_mode == "determ":
-            self.determExtractKey()
+            return self.determExtractKey()
         elif self.key_mode == "nn":
             pass
 
     def dynamicBeatExtraction(self):
-        bpm, beat = librosa.beat.beat_track(y=self.samples, sr=self.sr)
+        bpm, beat = librosa.beat.beat_track(y=self.samples, sr=self.sr, units='time')
 
         return bpm, beat
 
-    def nnBeatExtraction(self, model=1):
-        estimator = BeatNet(model, mode='offline', inference_model='DBN', plot=[], thread=False, device="Cuda")
-        output = estimator.process("audio file directory")
+    # def nnBeatExtraction(self, model=1):
+    #     estimator = BeatNet(model, mode='offline', inference_model='DBN', plot=[], thread=False, device="Cuda")
+    #     output = estimator.process("audio file directory")
 
-        duration_min = self.duration / 60
-        self.bpm = output.shape[0] / duration_min
-        self.beat = output[:, 0]
+    #     duration_min = self.duration / 60
+    #     self.bpm = output.shape[0] / duration_min
+    #     self.beat = output[:, 0]
 
     def determExtractKey(self):
         # compute chromograph
@@ -104,6 +107,7 @@ class TrackFeatures:
                 if second_best_corr is None or corr > second_best_corr:
                     self.second_key = key
                     second_best_corr = corr
+        return self.key
 
 
 
