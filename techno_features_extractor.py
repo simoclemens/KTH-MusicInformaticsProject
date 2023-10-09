@@ -50,13 +50,10 @@ def write_train_test_indexes(train_data, test_data, train_index_file="train_indi
 
     train_features = [dataset.pair_audio_with_features(filename)[filename] for filename in train_data]
     test_features = [dataset.pair_audio_with_features(filename)[filename] for filename in test_data]
-
-    train_features = np.array(train_features)
-    test_features = np.array(test_features)
+    
     # save np array in json file?
-
-    train_data_dict = {"indices": train_indexes, "features": train_features.tolist()}
-    test_data_dict = {"indices": test_indexes, "features": test_features.tolist()}
+    train_data_dict = {"indices": train_indexes, "labels": train_features}
+    test_data_dict = {"indices": test_indexes, "labels": test_features}
 
     with open(train_index_file, "w") as f:
         json.dump(train_data_dict, f)
