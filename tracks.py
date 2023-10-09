@@ -1,4 +1,4 @@
-from keyfinder import determExtractKey
+from keyfinder import determKeyExtraction, nnKeyExtraction
 from beatfinder import dynamicBeatExtraction, nnBeatExtraction
 
 
@@ -12,6 +12,7 @@ class TrackFeatures:
         self.duration = len(samples) / sr
         self.selected = False
         self.key = None
+        self.key_label = None
         self.second_key = None
         self.bpm = None
         self.beat = None
@@ -37,10 +38,11 @@ class TrackFeatures:
 
     def extractKey(self):
         if self.key_mode == "determ":
-            determExtractKey(self.samples, self.sr)
+            key = determKeyExtraction(self.samples, self.sr)
         elif self.key_mode == "nn":
-            pass
+            key = nnKeyExtraction(self.file_name)
 
+        self.key = key
 
 
 

@@ -4,7 +4,7 @@ import librosa.display
 from madmom.features.key import CNNKeyRecognitionProcessor, key_prediction_to_label
 
 
-def determExtractKey(samples, sr, second_key_flag=False):
+def determKeyExtraction(samples, sr, second_key_flag=False):
 
     # compute chromograph
     chromograph = librosa.feature.chroma_cqt(y=samples, sr=sr, bins_per_octave=24)
@@ -56,4 +56,11 @@ def determExtractKey(samples, sr, second_key_flag=False):
                     second_key = key
                     second_best_corr = corr
         return key, second_key
+
+
+def nnKeyExtraction(path):
+    proc = CNNKeyRecognitionProcessor()
+    pred = proc(path)
+    key = key_prediction_to_label(pred)
+    return key
 
