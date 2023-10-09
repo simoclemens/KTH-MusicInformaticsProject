@@ -1,7 +1,8 @@
 import librosa
-from beatfinder import nnBeatExtraction
+from beatfinder import nnBeatExtraction, dynamicBeatExtraction
 
 path = "samples\\test1.wav"
-bpm, beat = nnBeatExtraction(path)
+samples, sr = librosa.load(path)
+bpm, beat = dynamicBeatExtraction(samples,sr)
 print(bpm)
 print(beat)

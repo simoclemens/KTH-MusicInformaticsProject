@@ -1,10 +1,5 @@
 from keyfinder import determExtractKey
-from beatfinder import dynamicBeatExtraction
-import librosa
-from BeatNet.BeatNet import BeatNet
-import numpy as np
-
-
+from beatfinder import dynamicBeatExtraction, nnBeatExtraction
 
 
 class TrackFeatures:
@@ -33,9 +28,9 @@ class TrackFeatures:
         beat = None
 
         if self.beat_mode == "dynamic":
-            bpm, beat = dynamicBeatExtraction(self.samples, self,sr)
+            bpm, beat = dynamicBeatExtraction(self.samples, self.sr)
         elif self.beat_mode == "nn":
-            pass
+            bpm, beat = nnBeatExtraction(self.file_name)
 
         self.bpm = bpm
         self.beat = beat
