@@ -1,14 +1,20 @@
 import os
 import json
 from torch.utils.data import Dataset, DataLoader
+from pydub import AudioSegment
 import librosa
+from shutil import copyfile 
+
+audio_path = "FSL10K/audio/wav"
+output_path = "output_folder"  # Change this to the desired output folder
+techno_audios_list = "key_extraction/techno_audios.json"
 
 
 class AudioDataset(Dataset):
     def __init__(self, audio_folder, analysis_folder, transform=None, time_window=30):
         self.audio_folder = audio_folder
         audio_file_list = os.listdir(audio_folder)
-        self.audio_file_list = [file_name.split(".")[0] for file_name in audio_file_list]
+        self.audio_file_list = [file_name.split(".")[0] for file_name in audio_file_list if file_name.endswith(".wav.wav")] 
         self.analysis_folder = analysis_folder
         self.transform = transform
         self.time_window = time_window  # now using 60 seconds as default
@@ -23,9 +29,7 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, idx):
         audio_file_name = self.audio_file_list[idx]
-        audio_file_path = os.path.join(self.audio_folder, audio_file_name) + ".wav.wav"
-
-        audio_data, sr = librosa.load(audio_file_path, duration = self.time_window, sr=22050)
+        audio_data, sr = librosa.load(audio_file_name, duration = self.time_window, sr=22050)
         frame_length = int(self.time_window * sr)
         num_frames = len(audio_data) // frame_length
         audio_data = audio_data[:num_frames * frame_length]  # only keep the first num_frames * frame_length samples
@@ -43,16 +47,47 @@ class AudioDataset(Dataset):
         analysis_full_path = os.path.join(self.analysis_folder, file_name) + "_analysis.json"
         key = ""
         bpm = -1
-        with open(analysis_full_path) as f:
-            annotations = json.load(f)
-            key = annotations["tonality"]
-            bpm = annotations["tempo"]
-            f.close()
+        if os.path.exists(analysis_full_path):
+            with open(analysis_full_path) as f:
+                annotations = json.load(f)
+                key = annotations["tonality"]
+                bpm = annotations["tempo"]
+                f.close()
 
         return {file_name: [key, bpm]}
 
     def key_to_label(self, key):
         return self.key_mapping.get(key, -1)
+
+    def get_audio_duration(audio_path):
+        audio = AudioSegment.from_wav(audio_path)
+        duration_ms = len(audio)
+        duration_seconds = duration_ms / 1000.0 
+        return duration_seconds
+
+    def save_techno_audios(self, output_folder, target_duration):
+        os.makedirs(output_folder, exist_ok=True)
+
+        # Step 1: Read the list of selected audio filenames from techno_audios.json
+        with open(techno_audios_list, "r") as f:
+            selected_audio_filenames = json.load(f)
+
+        for audio_filename in selected_audio_filenames:
+            audio_file_path = os.path.join(self.audio_folder, audio_filename + ".wav.wav")
+
+            if os.path.exists(audio_file_path):
+                duration_seconds = AudioDataset.get_audio_duration(audio_file_path)
+
+                if duration_seconds > target_duration:
+                    audio = AudioSegment.from_wav(audio_file_path)
+                    trimmed_audio = audio[:target_duration * 1000]
+                    output_file_path = os.path.join(output_folder, audio_filename + ".wav")
+                    trimmed_audio.export(output_file_path, format="wav")
+
+                elif duration_seconds <= target_duration:
+                    output_file_path = os.path.join(output_folder, audio_filename + ".wav")
+                    copyfile(audio_file_path, output_file_path)
+
 
 
 class AudioDataLoader(DataLoader):
@@ -63,15 +98,8 @@ class AudioDataLoader(DataLoader):
 
 if __name__ == "__main__":
     # test
-    dataset = AudioDataset("audio", "ac_analysis", time_window=60)
+    duration = 30
+    dataset = AudioDataset("FSL10K\\audio\\wav", "ac_analysis", time_window=duration)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
-
-    dict = {}
-    for i in range(0, 500):
-        dic_elem = dataset.pair_audio_with_features(dataset.audio_file_list[i])
-        dict.update(dic_elem)
-    key_list = []
-    for dic_elem in dict:
-        if key_list.count(dict[dic_elem][0]) == 0:
-            key_list.append(dict[dic_elem][0])
-    dataset.__getitem__(100)
+    output_folder = "selected_techno_audios"
+    dataset.save_techno_audios(output_folder, duration)

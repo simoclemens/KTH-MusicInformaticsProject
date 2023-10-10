@@ -1,11 +1,12 @@
 from key_extraction.data_loader import AudioDataLoader, AudioDataset
 import json
 import os
-import numpy as np
 import random
 
 audio_path = "FSL10K/audio/wav"
 analysis_path = "FSL10K/ac_analysis"
+techno_audios_list = "techno_audios.json"
+
 
 def complete_audio_file_name(uncomplete_file_name):
     audios_file_list = os.listdir(audio_path)
@@ -44,22 +45,23 @@ def split_train_test_data(data, split_ratio=0.8):
     return train_data, test_data
 
 
+
+
 def write_train_test_indices(train_data, test_data, train_index_file="train_indices.json", test_index_file="test_indices.json"):
     train_indexes = [dataset.audio_file_list.index(filename) for filename in train_data]
     test_indexes = [dataset.audio_file_list.index(filename) for filename in test_data]
 
-    train_labels= [dataset.pair_audio_with_features(filename)[filename] for filename in train_data]
-    test_labels = [dataset.pair_audio_with_features(filename)[filename] for filename in test_data]
+    labels = [{"duration_seconds": AudioDataset.get_audio_duration(os.path.join(audio_path, filename + '.wav'))for filename, index in zip(dataset.audio_file_list, range(len(dataset.audio_file_list)))},
+              {"key": dataset.pair_audio_with_features(filename)[filename][0] for filename, index in zip(dataset.audio_file_list, range(len(dataset.audio_file_list)))},
+              {"bpm": dataset.pair_audio_with_features(filename)[filename][1] for filename, index in zip(dataset.audio_file_list, range(len(dataset.audio_file_list)))}]
     
-    # save np array in json file?
-    train_data_dict = {"indices": [{"filename": filename, "index": index} for filename, index in zip(train_data, train_indexes)], "labels": train_labels}
-    test_data_dict = {"indices": [{"filename": filename, "index": index} for filename, index in zip(test_data, test_indexes)], "labels": test_labels}
+    train_data_dict = {"indexes": train_indexes, "labels": labels}
+    test_data_dict = {"indexes": test_indexes, "labels": labels}
     with open(train_index_file, "w") as f:
         json.dump(train_data_dict, f)
 
     with open(test_index_file, "w") as f:
         json.dump(test_data_dict, f)
-
 
 def write_techno_features_to_file(techno_audios, dataset, techno_features_file_name = "techno_audios_features.json"):
     audio_files_list = dataset.audio_file_list
@@ -77,9 +79,11 @@ def write_techno_features_to_file(techno_audios, dataset, techno_features_file_n
         f.close()
 
 if __name__ == "__main__":
-    dataset = AudioDataset(audio_path, analysis_path, time_window=60)
+    time_window = 30
+    dataset = AudioDataset(audio_path, analysis_path, time_window=time_window)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
     techno_audios = extract_techno_audios("parent_genres.json", "techno_audios.json")
-    # write_techno_features_to_file(techno_audios, dataset)
+    write_techno_features_to_file(techno_audios, dataset)
     train_data, test_data = split_train_test_data(techno_audios)
     write_train_test_indices(train_data, test_data)
+
