@@ -5,7 +5,7 @@ import librosa
 
 
 class AudioDataset(Dataset):
-    def __init__(self, audio_folder, analysis_folder, transform=None, time_window=60):
+    def __init__(self, audio_folder, analysis_folder, transform=None, time_window=30):
         self.audio_folder = audio_folder
         audio_file_list = os.listdir(audio_folder)
         self.audio_file_list = [file_name.split(".")[0] for file_name in audio_file_list]
