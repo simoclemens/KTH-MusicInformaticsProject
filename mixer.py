@@ -1,13 +1,9 @@
 from tracks import TrackFeatures
-from scipy.io import wavfile
 import numpy as np
-import soundfile as sf
-import os
-import librosa
+import EQ_utilities
+import os, array, math, librosa
 from pydub import AudioSegment
-import pyrubberband
 from pydub.effects import speedup
-from pydub.playback import play
 
 keys = [
         ['E major', 'B major', 'F# major', 'D♭ major', 'A♭ major', 'E♭ major', 'B♭ major', 'F major', 'C major', 'G major', 'D major', 'A major'],
@@ -47,8 +43,16 @@ def findNeighbouringKeys(key): #based on the Chamelot Wheel
     return neighboring_keys
 
 class Mixer:
+  
     def __init__(self, playlistFolder):
         self.playlistFolder = playlistFolder
+
+        self.ARRAY_RANGES = {
+          8: (-0x80, 0x7f),
+          16: (-0x8000, 0x7fff),
+          32: (-0x80000000, 0x7fffffff),
+        }
+
         self.tracksFeatures: [TrackFeatures] = []
         self.modifiedTracksFolder = self.playlistFolder + '/modifiedTracksPlaylist/'
         self.__createTracksFeaturesList(self.tracksFeatures, self.playlistFolder+'/')
@@ -59,7 +63,7 @@ class Mixer:
             trackFeat = TrackFeatures(file, sample, sr)
             trackFeat.extractFeatures()
             self.tracksFeatures.append(trackFeat)
-        
+        print([track.bpm for track in self.tracksFeatures])
         self.tracksFeatures = sorted(self.tracksFeatures, key=lambda x: x.bpm)
         self.alignTracksBpmWithFastest()      
 
@@ -94,22 +98,30 @@ class Mixer:
     def createMix(self, secondsOfTransition):
        self.modifiedTracksFeatures: [TrackFeatures] = []
        self.__createTracksFeaturesList(self.modifiedTracksFeatures, self.modifiedTracksFolder)
-       out_track_exiting_instant = self.closest(self.modifiedTracksFeatures[0].beat, secondsOfTransition, True)
-       print(out_track_exiting_instant)
-       crossfade = (self.modifiedTracksFeatures[0].duration - out_track_exiting_instant)*1000
-       audio1 = AudioSegment.from_wav(self.modifiedTracksFeatures[0].file_name)[:self.modifiedTracksFeatures[0].beat[-1]*1000]
+       out_track_exiting_instant = self.closest(self.modifiedTracksFeatures[0].beat, secondsOfTransition, True)*1000
+       print(out_track_exiting_instant) 
+       audio1 = AudioSegment.from_wav(self.modifiedTracksFeatures[0].file_name)#.fade_out(duration=secondsOfTransition*1000)
        audio2 = AudioSegment.from_wav(self.modifiedTracksFeatures[1].file_name)[self.modifiedTracksFeatures[1].beat[0]*1000:]
-       audio3_mixed = audio1.append(audio2, crossfade)
+
+       audioHighPass = EQ_utilities.time_varying_high_pass_filter(audio1, initial_cutoff=1, final_cutoff=400, duration=17) #sweet spot
+       
+       audioHighPass.export(self.modifiedTracksFolder+'highpassed_'+'mixed.wav', format="wav")
+
+       audio2 = audio2.fade_in(duration=secondsOfTransition*1000)
+          
+       audio3_mixed = audio1.overlay(audio2, position=out_track_exiting_instant)
        audio3_mixed.export(self.modifiedTracksFolder+'modified_'+'mixed.wav', format="wav")
-       #print([[(beat) for beat in track.beat] for track in self.modifiedTracksFeatures])
+
 
     def closest(self, lst, secondsTransition, fromBack):
+     print(lst)
      if fromBack:
       instant = lst[-1]-secondsTransition
      else:
       instant = lst[0]+secondsTransition
      lst = np.asarray(lst)
      idx = (np.abs(lst - instant)).argmin()
+     print(lst, lst[idx])
      return lst[idx]
 
     def __createFolder(self, folderName):
@@ -119,10 +131,12 @@ class Mixer:
           for filename in os.listdir(folderName):
             print(filename)
             os.remove(f"{folderName}/{filename}")
+    
+    
             
           
 mixer = Mixer('playlist')
-mixer.createMix(5)
+mixer.createMix(8) #s
 
 
 
