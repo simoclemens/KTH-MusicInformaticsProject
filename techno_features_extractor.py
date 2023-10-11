@@ -1,11 +1,12 @@
-from key_extraction.data_loader import AudioDataLoader, AudioDataset
+from data_loader import AudioDataLoader, AudioDataset
 import json
 import os
 import random
 
 audio_path = "FSL10K/audio/wav"
 analysis_path = "FSL10K/ac_analysis"
-techno_audios_list = "techno_audios.json"
+min_target_duration = 5
+max_target_duration = 30
 
 
 def complete_audio_file_name(uncomplete_file_name):
@@ -15,14 +16,15 @@ def complete_audio_file_name(uncomplete_file_name):
         if uncomplete_file_name in file_name:
             return file_name
     
-def extract_techno_audios(genres_file_path, techno_audios_file_path="techno_audios.json"):
+def write_techno_audios(genres_file_path, techno_audios_file_path="techno_audios.json"):
     with open(genres_file_path) as f:
         audios_with_genres = json.load(f)
         techno_audios = []
         for audio, genres in audios_with_genres.items():
             complete_file_name = complete_audio_file_name(audio)
             for genre in genres:
-                if "techno" in genre and not complete_file_name is None: # (if full dataset is not downloaded, some audios may not be present)
+                # (if full dataset is not downloaded, some audios may not be present; if file has wrong format, complete_file_name will be None)
+                if "techno" in genre and not complete_file_name is None and not complete_file_name in techno_audios: 
                     techno_audios.append(complete_file_name)
 
         print(len(techno_audios))
@@ -45,13 +47,37 @@ def split_train_test_data(data, split_ratio=0.8):
     return train_data, test_data
 
 
+def get_audio_duration_in_seconds(filename):
+    file_path = os.path.join(audio_path, filename + '.wav.wav')
+    duration = -1
+    if os.path.exists(file_path):
+        duration = AudioDataset.get_audio_duration(file_path)
+    return duration
+
+
+def write_selected_techno_audios_with_duration(techno_audios, sel_techno_audios_file = "selected_techno_audios.json", techno_audios_with_duration_file="techno_audios_with_duration.json"):
+    selected_techno_audios_with_duration = []
+    for audio in techno_audios:
+        audio_duration = get_audio_duration_in_seconds(audio)
+        if audio_duration > min_target_duration:
+            if audio_duration > max_target_duration:
+                audio_duration = max_target_duration
+            selected_techno_audios_with_duration.append({audio: audio_duration})
+    with open(techno_audios_with_duration_file, "w") as f:
+        json.dump(selected_techno_audios_with_duration, f)
+        f.close()
+    with open(sel_techno_audios_file, "w") as f:
+        json.dump([list(audio.keys())[0] for audio in selected_techno_audios_with_duration], f)
+        f.close()
+    return [list(audio.keys())[0] for audio in selected_techno_audios_with_duration]
 
 
 def write_train_test_indices(train_data, test_data, train_index_file="train_indices.json", test_index_file="test_indices.json"):
     train_indexes = [dataset.audio_file_list.index(filename) for filename in train_data]
     test_indexes = [dataset.audio_file_list.index(filename) for filename in test_data]
 
-    labels = [{"duration_seconds": AudioDataset.get_audio_duration(os.path.join(audio_path, filename + '.wav'))for filename, index in zip(dataset.audio_file_list, range(len(dataset.audio_file_list)))},
+    labels = [{"duration_seconds": get_audio_duration_in_seconds(filename)
+               for filename, index in zip(dataset.audio_file_list, range(len(dataset.audio_file_list)))},
               {"key": dataset.pair_audio_with_features(filename)[filename][0] for filename, index in zip(dataset.audio_file_list, range(len(dataset.audio_file_list)))},
               {"bpm": dataset.pair_audio_with_features(filename)[filename][1] for filename, index in zip(dataset.audio_file_list, range(len(dataset.audio_file_list)))}]
     
@@ -63,17 +89,11 @@ def write_train_test_indices(train_data, test_data, train_index_file="train_indi
     with open(test_index_file, "w") as f:
         json.dump(test_data_dict, f)
 
-def write_techno_features_to_file(techno_audios, dataset, techno_features_file_name = "techno_audios_features.json"):
-    audio_files_list = dataset.audio_file_list
+def write_techno_features_to_file(techno_audios, techno_features_file_name = "selected_techno_audios_features.json"):
     techno_audios_features= []
-    for audio in audio_files_list:
-        with open("techno_audios.json") as f:
-            techno_audios = json.load(f)
-            
-            # match audio with its features and write in file
-            if audio in techno_audios:
-                audio_features = dataset.pair_audio_with_features(audio)
-                techno_audios_features.append(audio_features)
+    for audio in techno_audios:
+        audio_features = dataset.pair_audio_with_features(audio)
+        techno_audios_features.append(audio_features)
     with open(techno_features_file_name, "w") as f:
         json.dump(techno_audios_features, f)
         f.close()
@@ -82,8 +102,11 @@ if __name__ == "__main__":
     time_window = 30
     dataset = AudioDataset(audio_path, analysis_path, time_window=time_window)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
-    techno_audios = extract_techno_audios("parent_genres.json", "techno_audios.json")
-    write_techno_features_to_file(techno_audios, dataset)
-    train_data, test_data = split_train_test_data(techno_audios)
-    write_train_test_indices(train_data, test_data)
+    techno_audios = write_techno_audios("parent_genres.json", "techno_audios.json")
+    selected_techno_audios = write_selected_techno_audios_with_duration(techno_audios, "selected_techno_audios.json")
+    print(len(selected_techno_audios))
+
+    # write_techno_features_to_file(selected_techno_audios)
+    # train_data, test_data = split_train_test_data(selected_techno_audios)
+    # write_train_test_indices(train_data, test_data)
 

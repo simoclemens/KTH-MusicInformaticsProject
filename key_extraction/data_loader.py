@@ -7,7 +7,7 @@ from shutil import copyfile
 
 audio_path = "FSL10K/audio/wav"
 output_path = "output_folder"  # Change this to the desired output folder
-techno_audios_list = "key_extraction/techno_audios.json"
+techno_audios_list = "selected_techno_audios.json"
 
 
 class AudioDataset(Dataset):
@@ -65,12 +65,14 @@ class AudioDataset(Dataset):
         duration_seconds = duration_ms / 1000.0 
         return duration_seconds
 
-    def save_techno_audios(self, output_folder, target_duration):
+    def save_techno_audios(self, output_folder, max_target_duration=30):
+        copied_files = 0
         os.makedirs(output_folder, exist_ok=True)
 
         # Step 1: Read the list of selected audio filenames from techno_audios.json
         with open(techno_audios_list, "r") as f:
             selected_audio_filenames = json.load(f)
+        print(len(selected_audio_filenames))
 
         for audio_filename in selected_audio_filenames:
             audio_file_path = os.path.join(self.audio_folder, audio_filename + ".wav.wav")
@@ -78,16 +80,18 @@ class AudioDataset(Dataset):
             if os.path.exists(audio_file_path):
                 duration_seconds = AudioDataset.get_audio_duration(audio_file_path)
 
-                if duration_seconds > target_duration:
+                if duration_seconds > max_target_duration:
                     audio = AudioSegment.from_wav(audio_file_path)
-                    trimmed_audio = audio[:target_duration * 1000]
+                    trimmed_audio = audio[:max_target_duration * 1000]
                     output_file_path = os.path.join(output_folder, audio_filename + ".wav")
                     trimmed_audio.export(output_file_path, format="wav")
+                    copied_files += 1
 
-                elif duration_seconds <= target_duration:
+                else:
                     output_file_path = os.path.join(output_folder, audio_filename + ".wav")
                     copyfile(audio_file_path, output_file_path)
-
+                    copied_files += 1
+        print("Copied {} files".format(copied_files))
 
 
 class AudioDataLoader(DataLoader):
@@ -103,3 +107,4 @@ if __name__ == "__main__":
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
     output_folder = "selected_techno_audios"
     dataset.save_techno_audios(output_folder, duration)
+
