@@ -2,6 +2,7 @@ from data_loader import AudioDataLoader, AudioDataset
 import json
 import os
 import random
+from musicnn.extractor import extractor
 
 audio_path = "FSL10K/audio/wav"
 analysis_path = "FSL10K/ac_analysis"
@@ -16,6 +17,12 @@ def complete_audio_file_name(uncomplete_file_name):
         if uncomplete_file_name in file_name:
             return file_name
     
+def extract_musicnn_features(audio_file):
+    taggram, tags, features = extractor(audio_path+"/"+audio_file, model='MTT_musicnn', extract_features=True)
+    features_pen = features['penultimate']
+    features_pen = features_pen.tolist()
+    return features_pen
+
 
 def get_audio_duration_in_seconds(filename):
     file_path = os.path.join(audio_path, filename + '.wav.wav')
@@ -70,27 +77,28 @@ def write_selected_techno_audios_with_duration(techno_audios, sel_techno_audios_
     return [list(audio.keys())[0] for audio in selected_techno_audios_with_duration]
 
 
-def write_train_test_indices(train_data, test_data, train_index_file="train_indices.json", test_index_file="test_indices.json"):
+def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features.json", test_index_file="test_indices_features.json"):
     print("Train data: ", len(train_data), "Test data: ", len(test_data))
-    train_indexes = [dataset.audio_file_list.index(filename) for filename in train_data]
-    test_indexes = [dataset.audio_file_list.index(filename) for filename in test_data]
 
-    train_labels = [{"filename": file,
+    train_data_dict = [{"index": dataset.audio_file_list.index(file),
+                    "filename": file + ".wav.wav",
                     "duration_seconds": get_audio_duration_in_seconds(file),
                     "key": dataset.pair_audio_with_features(file)[file][0], 
-                    "bpm": dataset.pair_audio_with_features(file)[file][1]
+                    "bpm": dataset.pair_audio_with_features(file)[file][1],
+                    "features": extract_musicnn_features(file + ".wav.wav"),
                     } for file in train_data
                     ]
     
-    test_labels = [{"filename": file,
+    test_data_dict = [{
+                    "index": dataset.audio_file_list.index(file),
+                    "filename": file + ".wav.wav",
                     "duration_seconds": get_audio_duration_in_seconds(file),
                     "key": dataset.pair_audio_with_features(file)[file][0], 
-                    "bpm": dataset.pair_audio_with_features(file)[file][1]
+                    "bpm": dataset.pair_audio_with_features(file)[file][1],
+                    "features": extract_musicnn_features(file + ".wav.wav"),
                     } for file in test_data
                     ]
     
-    train_data_dict = {"indexes": train_indexes, "labels": train_labels}
-    test_data_dict = {"indexes": test_indexes, "labels": test_labels}
     with open(train_index_file, "w") as f:
         json.dump(train_data_dict, f)
 
@@ -118,3 +126,6 @@ if __name__ == "__main__":
     train_data, test_data = split_train_test_data(selected_techno_audios)
     write_train_test_indices(train_data, test_data)
 
+    # extract_musicnn_features(train_data)
+    # extract_musicnn_features(test_data)
+        
