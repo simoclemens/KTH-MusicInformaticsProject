@@ -16,7 +16,13 @@ def complete_audio_file_name(uncomplete_file_name):
     for file_name in audios_file_list:
         if uncomplete_file_name in file_name:
             return file_name
-    
+
+def extract_musicnn_features_with_duration(audio_file, duration_in_seconds):
+    taggram, tags, features = extractor(audio_path+"/"+audio_file, model='MTT_musicnn',input_length=duration_in_seconds, extract_features=True)
+    features_pen = features['penultimate']
+    features_pen = features_pen.tolist()
+    return features_pen
+
 def extract_musicnn_features(audio_file):
     taggram, tags, features = extractor(audio_path+"/"+audio_file, model='MTT_musicnn', extract_features=True)
     features_pen = features['penultimate']
@@ -77,7 +83,7 @@ def write_selected_techno_audios_with_duration(techno_audios, sel_techno_audios_
     return [list(audio.keys())[0] for audio in selected_techno_audios_with_duration]
 
 
-def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features.json", test_index_file="test_indices_features.json"):
+def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features_with_duration.json", test_index_file="test_indices_features_with_duration.json"):
     print("Train data: ", len(train_data), "Test data: ", len(test_data))
 
     train_data_dict = [{"index": dataset.audio_file_list.index(file),
@@ -85,7 +91,7 @@ def write_train_test_indices(train_data, test_data, train_index_file="train_indi
                     "duration_seconds": get_audio_duration_in_seconds(file),
                     "key": dataset.pair_audio_with_features(file)[file][0], 
                     "bpm": dataset.pair_audio_with_features(file)[file][1],
-                    "features": extract_musicnn_features(file + ".wav.wav"),
+                    "features": extract_musicnn_features_with_duration(file + ".wav.wav", get_audio_duration_in_seconds(file)),
                     } for file in train_data
                     ]
     
@@ -95,7 +101,7 @@ def write_train_test_indices(train_data, test_data, train_index_file="train_indi
                     "duration_seconds": get_audio_duration_in_seconds(file),
                     "key": dataset.pair_audio_with_features(file)[file][0], 
                     "bpm": dataset.pair_audio_with_features(file)[file][1],
-                    "features": extract_musicnn_features(file + ".wav.wav"),
+                    "features": extract_musicnn_features_with_duration(file + ".wav.wav", get_audio_duration_in_seconds(file)),
                     } for file in test_data
                     ]
     
