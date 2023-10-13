@@ -5,7 +5,7 @@ import torch.optim
 import torch
 import os
 import torch.utils.data
-from models import VGG16
+from customnn.models import VGG16
 import datetime
 import sys
 import numpy as np
