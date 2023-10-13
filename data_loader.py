@@ -5,10 +5,8 @@ from pydub import AudioSegment
 import librosa
 from shutil import copyfile 
 
-audio_path = "FSL10K/audio/wav"
 output_path = "output_folder"  # Change this to the desired output folder
 techno_audios_list = "selected_techno_audios.json"
-
 
 class AudioDataset(Dataset):
     def __init__(self, audio_folder, analysis_folder, transform=None, time_window=30):
@@ -19,28 +17,33 @@ class AudioDataset(Dataset):
         self.transform = transform
         self.time_window = time_window  # now using 60 seconds as default
 
-        # key labels
-        pitches = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-        keys = [pitches[i] + ' major' for i in range(12)] + [pitches[i] + ' minor' for i in range(12)]
-        self.key_mapping = {keys[i]: i for i in range(24)}
-
     def __len__(self):
         return len(self.audio_file_list)
 
     def __getitem__(self, idx):
-        audio_file_name = self.audio_file_list[idx]
-        audio_data, sr = librosa.load(audio_file_name, duration = self.time_window, sr=22050)
-        frame_length = int(self.time_window * sr)
-        num_frames = len(audio_data) // frame_length
-        audio_data = audio_data[:num_frames * frame_length]  # only keep the first num_frames * frame_length samples
-        chromagram = librosa.feature.chroma_stft(y=audio_data, sr=sr, n_fft=2048, hop_length=512)
-
+        audio_file_name = self.audio_folder + self.audio_file_list[idx] + ".wav.wav"
+        samples, sr = self.getsamples(audio_file_name)
         audio_features = self.pair_audio_with_features(audio_file_name)
         key, bpm = audio_features[audio_file_name]
         key_label = self.key_to_label(key)
 
         # also returing bpm?
-        return chromagram, key_label
+        return audio_file_name, sr, samples, key_label, bpm
+
+    def load_audio(self, filename):
+        samples, sr = librosa.load(filename)
+        print("File: ", filename, "Sample rate: ", sr, "Samples: ", len(samples))
+        return samples, sr
+
+    def getsamples(self, filename):
+        samples, sr = librosa.load(filename)
+        print("File: ", filename, "Sample rate: ", sr, "Samples: ", len(samples))
+        frame_length = int(self.time_window * sr)
+        num_frames = len(samples) // frame_length
+        samples = samples[:num_frames * frame_length]
+
+        return samples, sr
+        
 
     # pair each file with its annotations
     def pair_audio_with_features(self, file_name):
@@ -56,8 +59,26 @@ class AudioDataset(Dataset):
 
         return {file_name: [key, bpm]}
 
-    def key_to_label(self, key):
-        return self.key_mapping.get(key, -1)
+    def key_to_label(key):
+        key_mapping_sharp, key_mapping_flat = AudioDataset.get_key_mapping()
+        
+        if key in key_mapping_sharp:
+            return key_mapping_sharp[key]
+        elif key in key_mapping_flat:
+            return key_mapping_flat[key]
+        else:
+            print("Key not found: ", key)
+            return -1
+
+    def get_key_mapping():
+        pitches = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+        keys = [pitches[i] + ' major' for i in range(12)] + [pitches[i] + ' minor' for i in range(12)]
+        key_mapping_sharp = {keys[i]: i for i in range(24)}
+
+        pitches = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+        keys = [pitches[i] + ' major' for i in range(12)] + [pitches[i] + ' minor' for i in range(12)]
+        key_mapping_flat = {keys[i]: i for i in range(24)}
+        return key_mapping_sharp, key_mapping_flat
 
     def get_audio_duration(audio_path):
         audio = AudioSegment.from_wav(audio_path)
