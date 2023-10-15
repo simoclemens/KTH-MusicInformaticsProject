@@ -1,7 +1,7 @@
 import numpy as np
 import librosa
 import librosa.display
-from madmom.features.key import CNNKeyRecognitionProcessor, key_prediction_to_label
+#from madmom.features.key import CNNKeyRecognitionProcessor, key_prediction_to_label
 
 
 def determKeyExtraction(samples, sr, second_key_flag=False):
@@ -58,9 +58,9 @@ def determKeyExtraction(samples, sr, second_key_flag=False):
         return key, second_key
 
 
-def nnKeyExtraction(path):
-    proc = CNNKeyRecognitionProcessor()
-    pred = proc(path)
-    key = key_prediction_to_label(pred)
-    return key
+# def nnKeyExtraction(path):
+#     proc = CNNKeyRecognitionProcessor()
+#     pred = proc(path)
+#     key = key_prediction_to_label(pred)
+#     return key
 

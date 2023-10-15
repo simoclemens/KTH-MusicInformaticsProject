@@ -1,9 +1,9 @@
-from keyfinder import TonalFragment
+#from keyfinder import TonalFragment
 import librosa
 # from BeatNet.BeatNet import BeatNet
 import numpy as np
-from keyfinder import determKeyExtraction, nnKeyExtraction
-from beatfinder import dynamicBeatExtraction, nnBeatExtraction
+#from keyfinder import determKeyExtraction, nnKeyExtraction
+from beatfinder import dynamicBeatExtraction #nnBeatExtraction
 
 
 
@@ -27,8 +27,8 @@ class TrackFeatures:
 
     def extractFeatures(self):
         bpm, beat = self.extractBeatAndBpm()
-        key = self.extractKey()
-        return bpm, beat, key
+        #key = self.extractKey()
+        return bpm, beat#, key
 
     def extractBeatAndBpm(self):
         bpm = None
@@ -36,21 +36,21 @@ class TrackFeatures:
 
         if self.beat_mode == "dynamic":
             bpm, beat = dynamicBeatExtraction(self.samples, self.sr)
-        elif self.beat_mode == "nn":
-            bpm, beat = nnBeatExtraction(self.file_name)
+        #elif self.beat_mode == "nn":
+        #    bpm, beat = nnBeatExtraction(self.file_name)
 
         self.bpm = bpm
         self.beat = beat
         return self.bpm, self.beat
         
 
-    def extractKey(self):
-        if self.key_mode == "determ":
-            key = determKeyExtraction(self.samples, self.sr)
-        elif self.key_mode == "nn":
-            key = nnKeyExtraction(self.file_name)
+    # def extractKey(self):
+    #     if self.key_mode == "determ":
+    #         key = determKeyExtraction(self.samples, self.sr)
+    #     elif self.key_mode == "nn":
+    #         key = nnKeyExtraction(self.file_name)
 
-        self.key = key
+    #     self.key = key
 
 
 

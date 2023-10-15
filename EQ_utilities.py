@@ -123,7 +123,7 @@ def change_tempo(input_track, target_tempo):
     ff = ffmpy.FFmpeg(
         inputs={temp_in: None},
         outputs={temp_out: '-filter:a "atempo={}"'.format(playback_speed)},
-        global_options='-y'  # Force overwrite
+        global_options='-loglevel quiet -y'  # Force overwrite
     )
     ff.run()
 
@@ -136,24 +136,24 @@ def change_tempo(input_track, target_tempo):
 
     return modified_audio
 
-def gradual_tempo_change(input_track: TrackFeatures, final_tempo, final_segment, num_subsegments=100):
+def gradual_tempo_change(input_track, final_tempo, final_second_for_tempo_increase, num_subsegments=100):
     initial_tempo = input_track.bpm
     audio = AudioSegment.from_file(input_track.file_name)
-    final_segment = int(final_segment)
+
     tempo_increment_per_subsegment = (final_tempo - initial_tempo) / num_subsegments
-    subsegment_duration = final_segment / num_subsegments
+    subsegment_duration = final_second_for_tempo_increase * 1000 / num_subsegments
     tempo_segments = []
 
     current_tempo = initial_tempo
-    current_segment = 0
+    current_segment_start_time = 0
 
     for _ in range(num_subsegments):
-        end_time = current_segment + subsegment_duration
-        subsegment = audio[current_segment:int(end_time)]
+        current_segment_end_time = current_segment_start_time + subsegment_duration
+        subsegment = audio[current_segment_start_time:int(current_segment_end_time)]  # Ensure slicing is precise
 
         # Calculate playback speed
         playback_speed = current_tempo / initial_tempo
-        
+
         # Export subsegment to a temporary file
         temp_in = "temp_in.wav"
         temp_out = "temp_out.wav"
@@ -163,7 +163,7 @@ def gradual_tempo_change(input_track: TrackFeatures, final_tempo, final_segment,
         ff = ffmpy.FFmpeg(
             inputs={temp_in: None},
             outputs={temp_out: '-filter:a "atempo={}"'.format(playback_speed)},
-            global_options='-y'  # Force overwrite
+            global_options='-loglevel quiet -y'  # Force overwrite
         )
         ff.run()
 
@@ -172,20 +172,21 @@ def gradual_tempo_change(input_track: TrackFeatures, final_tempo, final_segment,
         tempo_segments.append(sped_up_segment)
 
         current_tempo += tempo_increment_per_subsegment
-        current_segment = end_time
+        current_segment_start_time = current_segment_end_time
 
         # Clean up temporary files immediately
         os.remove(temp_in)
         os.remove(temp_out)
-    
-    segment_after_final_segment = audio[final_segment:]
+
+    # Handle the rest of the track
+    segment_after_final_segment = audio[int(final_second_for_tempo_increase*1000):]  # Ensure precise slicing
     playback_speed_final = current_tempo / initial_tempo
     segment_after_final_segment.export(temp_in, format="wav")
 
     ff = ffmpy.FFmpeg(
         inputs={temp_in: None},
         outputs={temp_out: '-filter:a "atempo={}"'.format(playback_speed_final)},
-        global_options='-y'  # Force overwrite
+        global_options='-loglevel quiet -y'  # Force overwrite
     )
     ff.run()
 
@@ -197,11 +198,11 @@ def gradual_tempo_change(input_track: TrackFeatures, final_tempo, final_segment,
     os.remove(temp_out)
 
     gradual_tempo_track = sum(tempo_segments)
-    
+
     # Assuming you have EQ_utilities.high_pass_filter implemented elsewhere
     gradual_tempo_track = high_pass_filter(gradual_tempo_track, 100)
-    info = "points:" +  str(end_time) +' ' + str(final_segment) +' ' + str(len(audio))
-    return gradual_tempo_track , info
+
+    return gradual_tempo_track
 
 def get_min_max_value(bit_depth):
   return ARRAY_RANGES[bit_depth]
