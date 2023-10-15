@@ -56,8 +56,7 @@ class Mixer:
         
        audio1, info = EQ_utilities.gradual_tempo_change(track1, final_tempo=128, final_segment=out_track_exiting_instant)
        
-       print(track1.file_name, ' bpm: ', track1.bpm, '   ', track2.file_name, ' bpm: ', track2.bpm)
-       #re-analize speeded up track
+      #re-analize speeded up track
       #  audio1.export(self.modifiedTracksFolder+'bpmIncreased.wav', format="wav")
       #  sample, sr = librosa.load(self.modifiedTracksFolder+'bpmIncreased.wav')
       #  audio1SpeededUp = TrackFeatures(self.modifiedTracksFolder+'bpmIncreased.wav', sample, sr)
