@@ -33,6 +33,7 @@ class Mixer:
 
             l1 = len(audio1Exiting[in_transition_start_ms:])
             l2 = len(audio2Entering[:out_transition_end_ms])
+            print(l1, l2, track2_initial_ms_for_transition)
             silentSegmentToExtendAudio1 = AudioSegment.silent(duration=abs(l1-l2)-track2_initial_ms_for_transition)
             audio1Exiting += silentSegmentToExtendAudio1
             # Transition
