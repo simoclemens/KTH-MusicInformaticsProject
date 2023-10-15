@@ -29,7 +29,7 @@ class NNMixing:
         mix = []
         current_idx = self.starting_track_idx
 
-        for i in range(self.number_of_tracks):
+        for _ in range(self.number_of_tracks):
             self.track_list[current_idx].setSelected()
             current_idx = self.nnSearch(current_idx)
             mix.append(current_idx)
