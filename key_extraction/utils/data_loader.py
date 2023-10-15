@@ -2,6 +2,7 @@ import os
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import numpy as np
+import torch
 
 
 # AUDIO DATASET
@@ -31,7 +32,7 @@ class AudioTrackDataset(Dataset):
 
         # generate a list of dictionaries with uid and label for each action
         self.track_list = [{'index': item[1]['index'],
-                            'bpm': item[1]['verb_class'],
+                            'bpm': item[1]['bpm'],
                             'key': item[1]['key'],
                             'features': item[1]['features']
                             }
@@ -43,10 +44,26 @@ class AudioTrackDataset(Dataset):
         features = track['features']
         label = track['key']
         if self.custom_duration:
-            output = {'features': np.array(features), 'label': label}
+            output = {'features': np.array(features), 'label': int(self.getKeys(label))}
         else:
-            output = {'features': np.array(features[0]), 'label': label}
+            output = {'features': np.array(features[0]), 'label': int(self.getKeys(label))}
         return output
 
     def __len__(self):
         return len(self.track_list)
+
+    def getKeys(self, input):
+        key_dict = {'C minor': 0, 'C major': 1,
+                    'C# minor': 2, 'C# major': 3,
+                    'D minor': 4, 'D major': 5,
+                    'D# minor': 6, 'D# major': 7,
+                    'E minor': 8, 'E major': 9,
+                    'F minor': 10, 'F major': 11,
+                    'F# minor': 12, 'F# major': 13,
+                    'G minor': 14, 'G major': 15,
+                    'G# minor': 16, 'G# major': 17,
+                    'A minor': 18, 'A major': 19,
+                    'A# minor': 20, 'A# major': 21,
+                    'B minor': 22, 'B major': 23}
+
+        return key_dict[input]

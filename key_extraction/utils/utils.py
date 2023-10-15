@@ -3,62 +3,6 @@ import torch
 import numpy as np
 
 
-def dense_sampling(start_frame_clip, end_frame_clip, num_frames_per_clip, stride):
-    centroid = (start_frame_clip + end_frame_clip) // 2
-
-    if num_frames_per_clip % 2 == 0:
-        num_frames_left = num_frames_right = num_frames_per_clip // 2
-    else:
-        num_frames_left = num_frames_per_clip // 2
-        num_frames_right = num_frames_per_clip // 2 + 1
-
-    stride_left = max(stride, 1)  # ensure stride is at least 1
-    stride_right = max(stride, 1)  # ensure stride is at least 1
-
-    num_frames_left_adjusted = min(num_frames_left, int((centroid - start_frame_clip) / stride_left))
-    num_frames_right_adjusted = min(num_frames_right, int((end_frame_clip - centroid) / stride_right))
-
-    frames = [centroid]
-    for i in range(1, num_frames_left_adjusted + 1):
-        frame_left = int(round(centroid - i * stride_left))
-        frames.insert(0, frame_left)
-    for i in range(1, num_frames_right_adjusted + 1):
-        frame_right = int(round(centroid + i * stride_right))
-        frames.append(frame_right)
-
-    num_frames = len(frames)
-    if num_frames < num_frames_per_clip:
-        num_frames_to_add = num_frames_per_clip - num_frames
-        if num_frames_left_adjusted >= num_frames_left:
-            num_frames_right_adjusted += num_frames_to_add
-        else:
-            num_frames_left_adjusted += num_frames_to_add
-        for i in range(num_frames_to_add):
-            if i % 2 == 0:
-                frame_left = int(round(centroid - (num_frames_left_adjusted + i // 2 + 1) * stride_left))
-                frames.insert(0, frame_left)
-            else:
-                frame_right = int(round(centroid + (num_frames_right_adjusted + i // 2 + 1) * stride_right))
-                frames.append(frame_right)
-
-    return frames
-
-def uniform_sampling(start_frame_clip, end_frame_clip, num_frames_per_clip):
-    frame_indices = np.linspace(start_frame_clip, end_frame_clip, num=num_frames_per_clip, dtype=int)
-    sampled_frames = [frame_indices[i] for i in range(num_frames_per_clip)]
-    return sampled_frames
-
-
-def get_domains_and_labels(args):
-    num_verbs = 8
-    domains = {'D1': 8, 'D2': 1, 'D3': 22}
-    source_domain = domains[args.dataset.shift.split("-")[0]]
-    target_domain = domains[args.dataset.shift.split("-")[1]]
-    valid_labels = [i for i in range(num_verbs)]
-    num_class = num_verbs
-    return num_class, valid_labels, source_domain, target_domain
-
-
 class Accuracy(object):
     """Computes and stores the average and current value of different top-k accuracies from the outputs and labels"""
 

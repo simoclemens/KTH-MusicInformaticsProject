@@ -12,7 +12,7 @@ import numpy as np
 
 
 # train function
-def train(file, net, train_loader, val_loader, optimizer, cost_function, n_classes, batch_size=1,
+def train(file, net, train_loader, val_loader, optimizer, cost_function, n_classes, batch_size=32,
           loss_weight=1, training_iterations=2000, device="cuda:0"):
     top_accuracy = 0
     data_loader_source = iter(train_loader)

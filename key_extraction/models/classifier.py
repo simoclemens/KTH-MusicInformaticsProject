@@ -56,13 +56,13 @@ class KeyClassifier(nn.Module):
         super(KeyClassifier, self).__init__()
 
         self.classifier = nn.Sequential(
-            nn.Linear(input_size, 4096),
+            nn.Linear(input_size, 400),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, 4096),
+            nn.Linear(400, 400),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, num_classes),
+            nn.Linear(400, num_classes)
         )
 
     def forward(self, x):

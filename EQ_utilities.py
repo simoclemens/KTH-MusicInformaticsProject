@@ -10,6 +10,7 @@ ARRAY_RANGES = {
   32: (-0x80000000, 0x7fffffff),
 } 
 
+
 def low_pass_filter(seg, cutoff):
     """
         cutoff - Frequency (in Hz) where higher frequency signal will begin to
@@ -36,6 +37,7 @@ def low_pass_filter(seg, cutoff):
             filteredArray[offset] = int(last_val[j])
 
     return seg._spawn(data=filteredArray)
+
 
 def high_pass_filter(seg, cutoff):
     """
@@ -107,6 +109,7 @@ def time_varying_high_pass_filter(seg, initial_cutoff, final_cutoff, duration):
     
     return seg._spawn(data=filteredArray)
 
+
 def change_tempo(input_track, target_tempo):
     initial_tempo = input_track.bpm
     playback_speed = target_tempo / initial_tempo
@@ -135,6 +138,7 @@ def change_tempo(input_track, target_tempo):
     os.remove(temp_out)
 
     return modified_audio
+
 
 def gradual_tempo_change(input_track: TrackFeatures, final_tempo, final_segment, num_subsegments=100):
     initial_tempo = input_track.bpm
@@ -202,6 +206,7 @@ def gradual_tempo_change(input_track: TrackFeatures, final_tempo, final_segment,
     gradual_tempo_track = high_pass_filter(gradual_tempo_track, 100)
     info = "points:" +  str(end_time) +' ' + str(final_segment) +' ' + str(len(audio))
     return gradual_tempo_track , info
+
 
 def get_min_max_value(bit_depth):
   return ARRAY_RANGES[bit_depth]
