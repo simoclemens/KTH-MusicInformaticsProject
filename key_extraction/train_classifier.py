@@ -1,4 +1,4 @@
-from utils.train_functions import get_loss_function, get_optimizer, compute_accuracy
+from utils.train_functions import get_loss_function, get_optimizer, compute_accuracy, getTop5Correct
 import torch.nn.parallel
 import torch.optim
 import torch
@@ -41,8 +41,8 @@ def train(file, net, train_loader, val_loader, optimizer, cost_function, n_class
         file.write('[{}/{}] ITERATION COMPLETED\n'.format(iteration, training_iterations))
         file.write('TEST: acc@top1={:.2f}%  acc@top5={:.2f}%\n\n'.format(test_metrics['top1'] * 100, 0))
 
-        if test_metrics['top1'] >= top_accuracy:
-            top_accuracy = test_metrics['top1']
+        if test_metrics['top5'] >= top_accuracy:
+            top_accuracy = test_metrics['top5']
             print('ITERATION:' + str(iteration) + ' - BEST ACCURACY: {:.2f}'.format(top_accuracy * 100))
         if iteration % 10 == 0:
             print('ITERATION:' + str(iteration))
@@ -58,6 +58,7 @@ def validate(net, val_loader, n_classes, batch_size=32, device="cuda:0"):
 
     total_size = len(val_loader.dataset)
     val_correct = 0
+    top5_correct = 0
     counter = {}
 
     for i in range(n_classes):
@@ -77,24 +78,25 @@ def validate(net, val_loader, n_classes, batch_size=32, device="cuda:0"):
                 counter[data_source['label'][i].item()][1] += 1
 
             val_correct += (predicted == label).sum().item()
+            top5_correct += getTop5Correct(logits, label)
 
     # compute the accuracy
     accuracy = val_correct / total_size
+    top5_accuracy = top5_correct / total_size
     for i in range(n_classes):
         if counter[i][1] != 0:
             counter[i] = counter[i][0] / counter[i][1]
         else:
             counter[i] = 0
-    test_results = {'top1': accuracy, 'classes_acc': counter}
+    test_results = {'top1': accuracy, 'top5': top5_accuracy, 'classes_acc': counter}
 
     return test_results
-
 
 
 def main():
     device = "cuda:0"
 
-    lr = 0.1
+    lr = 0.05
     wd = 1e-7
     momentum = 0.9
     loss_weight = 1
