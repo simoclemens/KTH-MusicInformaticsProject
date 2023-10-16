@@ -16,6 +16,8 @@ class TrackFeatures:
         self.second_key = None
         self.bpm = None
         self.beat = None
+        self.out_exiting_instant = None
+        self.mod_track = samples
 
     def setSelected(self):
         self.selected = True

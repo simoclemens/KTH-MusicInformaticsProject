@@ -1,16 +1,5 @@
-import librosa
-from beatfinder import nnBeatExtraction, dynamicBeatExtraction
-from keyfinder import nnKeyExtraction, determKeyExtraction
+import torch
 
-path = "samples\\test1.wav"
-samples, sr = librosa.load(path)
-bpm, beat = dynamicBeatExtraction(samples, sr)
-key = determKeyExtraction(samples, sr)
-print(bpm)
-print(beat)
-print(key)
-bpm, beat = nnBeatExtraction(path)
-key = nnKeyExtraction(path)
-print(bpm)
-print(beat)
-print(key)
+print("Torch version:",torch.__version__)
+
+print("Is CUDA enabled?",torch.cuda.is_available())
