@@ -20,13 +20,15 @@ class Mixer:
         self.playlistFolder = playlistFolder
         self.modifiedTracksFolder = self.playlistFolder + 'modifiedTracksPlaylist/'
         self.mixedSegments = []  # Store all the mixed and non-mixed segments
+
+    def mixPlaylist(self):
         prev_transition_end_ms = 0
         for idx, track in enumerate(self.trackPlaylist[:-1]):
             print('IDX:', idx)
             track1 = track
             track2 = self.trackPlaylist[idx + 1]
-            audio1Exiting, audio2Entering, in_transition_start_ms, out_transition_end_ms, track2_initial_ms_for_transition = self.createMix(
-                track1=track1, track2=track2, secondsOfTransition=20)
+            audio1Exiting, audio2Entering, in_transition_start_ms, out_transition_end_ms, \
+                track2_initial_ms_for_transition = self.createMix(track1=track1, track2=track2, secondsOfTransition=20)
 
             # Remember: previous 'track2' is now the current one ([idx]), and previous one was shifted by track2_initial_ms_for_transition[idx-1]
             nonMixedSection = audio1Exiting[prev_transition_end_ms:in_transition_start_ms]
@@ -144,3 +146,4 @@ track_selection = [
 ]
 
 mixer = Mixer(track_selection)
+mixer.mixPlaylist()
