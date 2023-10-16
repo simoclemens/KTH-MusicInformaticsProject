@@ -19,25 +19,32 @@ class Mixer:
         self.playlistFolder = playlistFolder
         self.modifiedTracksFolder = self.playlistFolder + 'modifiedTracksPlaylist/'
         self.mixedSegments = []  # Store all the mixed and non-mixed segments
-        prev_transition_end = 0
+        prev_transition_end_ms = 0
+        prev_track2_initial_ms_for_transition = 0
         for idx, track in enumerate(self.trackPlaylist[:-1]):
             track1 = track
             track2 = self.trackPlaylist[idx + 1]
             
             audio1Exiting, audio2Entering, in_transition_start_ms, out_transition_end_ms, track2_initial_ms_for_transition = self.createMix(track1=track1, track2=track2)
+            
+            # Remember: previous 'track2' is now the current one ([idx]), and previous one was shifted by track2_initial_ms_for_transition[idx-1]
+            
             audio1Exiting.export(self.modifiedTracksFolder + str(idx)+'audio1Exiting.wav', format="wav")
             audio2Entering.export(self.modifiedTracksFolder +  str(idx)+'audio2Entering.wav', format="wav")
-            self.mixedSegments.append(audio1Exiting[prev_transition_end:in_transition_start_ms])
+            nonMixedSection = audio1Exiting[prev_transition_end_ms:in_transition_start_ms]
+            self.mixedSegments.append(nonMixedSection)
 
-            prev_transition_end = out_transition_end_ms
+            #The silent section is a mismatch caused by the track2_initial_ms_for_transition I think, even though it's really small
 
-            l1 = len(audio1Exiting[in_transition_start_ms:])
-            l2 = len(audio2Entering[:out_transition_end_ms])
-            print(l1, l2, track2_initial_ms_for_transition)
-            silentSegmentToExtendAudio1 = AudioSegment.silent(duration=abs(l1-l2)-track2_initial_ms_for_transition)
-            audio1Exiting += silentSegmentToExtendAudio1
+            # Update
+            prev_transition_end_ms = out_transition_end_ms
+            #this avoids silent sections to form
+            diff = len(audio1Exiting[in_transition_start_ms:]) - len(audio2Entering[:out_transition_end_ms])
+            if diff > 0:
+                audio1Exiting[:-diff]
             # Transition
-            transition_mix = audio1Exiting[in_transition_start_ms:].overlay(audio2Entering[:out_transition_end_ms], 0)
+            transition_mix = audio1Exiting[in_transition_start_ms:-diff].overlay(audio2Entering[:out_transition_end_ms], position=0)
+            transition_mix.export(self.modifiedTracksFolder +  str(idx)+'transition.wav', format="wav")
             self.mixedSegments.append(transition_mix)
 
         lastAudio = AudioSegment.from_file(track2.file_name)
@@ -58,7 +65,7 @@ class Mixer:
 
       audio1 = AudioSegment.from_file(track1.file_name)
       audio2 = AudioSegment.from_file(track2.file_name)
-      track2_initial_ms_for_transition = track2.beat[0]
+      track2_initial_ms_for_transition = track2.beat[0]*1000
       audio2 = audio2[track2_initial_ms_for_transition:]
 
       # Get the approximate transition instant
@@ -97,7 +104,7 @@ class Mixer:
 
       transition_end_instant_relative_to_track2_ms = secondsOfTransition * 1000
 
-      return audio1, audio2, exact_out_track_exiting_second*1000, transition_end_instant_relative_to_track2_ms, track2_initial_ms_for_transition
+      return audio1, audio2, exact_out_track_exiting_second*1000, transition_end_instant_relative_to_track2_ms, track2_initial_ms_for_transition*1000
 
     def closest(self, lst, secondsTransition, fromBack):
         #print(lst, secondsTransition)
@@ -123,8 +130,6 @@ def loadTrack(filename):
    trackFeatures.extractFeatures()
    return trackFeatures
 
-
-from tracks import TrackFeatures
 # TO DO
 track_list = []
 
@@ -136,7 +141,11 @@ track_selection = [
                     loadTrack("playlist/AeroMex (mp3cut.net).wav"),
                     loadTrack("playlist/Inside Out (mp3cut.net).wav")
                 ]
+
 #track_lineup = track_selection.#()
+track_selection[0].bpm = 125
+track_selection[1].bpm = 126
+track_selection[2].bpm = 127
 
 mixer = Mixer(track_selection)
 #mixer.createMix()
