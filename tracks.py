@@ -22,7 +22,7 @@ class TrackFeatures:
     def setSelected(self):
         self.selected = True
 
-    def extractFeatures(self, key_mode="determ", beat_mode="dynamic"):
+    def extractFeatures(self):
         self.extractBeat()
         self.extractKey()
 

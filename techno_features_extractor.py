@@ -1,4 +1,4 @@
-from key_extraction.data_loader import AudioDataLoader, AudioDataset
+from data_loader import AudioDataLoader, AudioDataset
 import json
 import os
 import random
