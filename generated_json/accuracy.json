@@ -1,9 +1,0 @@
-[{"filename": "214426_4012250.wav.wav", "duration": 5.227, "actual_key": 12, "key_determ": 0, "key_nn": 12, "actual_bpm": 143, "bpm_dynamic": 107.666015625, "bpm_nn": 6000.0}, 
-{"filename": "214732_4012250.wav.wav", "duration": 5.307, "actual_key": 0, "key_determ": 0, "key_nn": 12, "actual_bpm": 138, "bpm_dynamic": 143.5546875, "bpm_nn": 6000.0}, 
-{"filename": "158444_33044.wav.wav", "duration": 28.716, "actual_key": 10, "key_determ": 10, "key_nn": 22, "actual_bpm": 136, "bpm_dynamic": 135.99917763157896, "bpm_nn": 6000.0}, 
-{"filename": "414045_4397472.wav.wav", "duration": 11.26, "actual_key": 0, "key_determ": 12, "key_nn": 12, "actual_bpm": 128, "bpm_dynamic": 31.901041666666668, "bpm_nn": 127.65957446808511}, 
-{"filename": "31718_2518.wav.wav", "duration": 8.0, "actual_key": 11, "key_determ": 15, "key_nn": 15, "actual_bpm": 120, "bpm_dynamic": 151.99908088235293, "bpm_nn": 6000.0}, 
-{"filename": "211555_1676145.wav.wav", "duration": 30.0, "actual_key": 7, "key_determ": 13, "key_nn": 16, "actual_bpm": 128, "bpm_dynamic": 129.19921875, "bpm_nn": 127.65957446808511}, 
-{"filename": "214591_4012250.wav.wav", "duration": 5.227, "actual_key": 12, "key_determ": 10, "key_nn": 12, "actual_bpm": 103, "bpm_dynamic": 143.5546875, "bpm_nn": 6000.0}, {"filename": "75159_1117259.wav.wav", "duration": 29.541, "actual_key": 12, "key_determ": 12, "key_nn": 19, "actual_bpm": 130, "bpm_dynamic": 129.19921875, "bpm_nn": 6000.0}, 
-{"filename": "234384_3997588.wav.wav", "duration": 33.775, "actual_key": 0, "key_determ": 23, "key_nn": 16, "actual_bpm": 172, "bpm_dynamic": 172.265625, "bpm_nn": 6000.0}, 
-{"filename": "86761_1006546.wav.wav", "duration": 8.987, "actual_key": 17, "key_determ": 22, "key_nn": 17, "actual_bpm": 142, "bpm_dynamic": 143.5546875, "bpm_nn": 139.53488372093022}]
