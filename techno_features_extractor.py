@@ -6,7 +6,7 @@ from musicnn.extractor import extractor
 
 audio_path = "FSL10K/audio/wav"
 analysis_path = "FSL10K/ac_analysis"
-min_target_duration = 5
+min_target_duration = 6
 max_target_duration = 30
 
 
@@ -26,8 +26,10 @@ def extract_musicnn_features_with_duration(audio_file, duration_in_seconds):
 def extract_musicnn_features(audio_file):
     taggram, tags, features = extractor(audio_path+"/"+audio_file, model='MTT_musicnn', extract_features=True)
     features_pen = features['penultimate']
-    features_pen = features_pen.tolist()
-    return features_pen
+    features_pen_list = features_pen.tolist()
+    print("Features shape: ", len(features_pen))
+    
+    return features_pen_list
 
 
 def get_audio_duration_in_seconds(filename):
@@ -83,7 +85,7 @@ def write_selected_techno_audios_with_duration(techno_audios, sel_techno_audios_
     return [list(audio.keys())[0] for audio in selected_techno_audios_with_duration]
 
 
-def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features_with_duration.json", test_index_file="test_indices_features_with_duration.json"):
+def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features.json", test_index_file="test_indices_features.json"):
     print("Train data: ", len(train_data), "Test data: ", len(test_data))
 
     train_data_dict = [{"index": dataset.audio_file_list.index(file),
@@ -91,7 +93,7 @@ def write_train_test_indices(train_data, test_data, train_index_file="train_indi
                     "duration_seconds": get_audio_duration_in_seconds(file),
                     "key": dataset.pair_audio_with_features(file)[file][0], 
                     "bpm": dataset.pair_audio_with_features(file)[file][1],
-                    "features": extract_musicnn_features_with_duration(file + ".wav.wav", get_audio_duration_in_seconds(file)),
+                    "features": extract_musicnn_features(str(file + ".wav.wav")),
                     } for file in train_data
                     ]
     
@@ -101,7 +103,7 @@ def write_train_test_indices(train_data, test_data, train_index_file="train_indi
                     "duration_seconds": get_audio_duration_in_seconds(file),
                     "key": dataset.pair_audio_with_features(file)[file][0], 
                     "bpm": dataset.pair_audio_with_features(file)[file][1],
-                    "features": extract_musicnn_features_with_duration(file + ".wav.wav", get_audio_duration_in_seconds(file)),
+                    "features": extract_musicnn_features(str(file + ".wav.wav")),
                     } for file in test_data
                     ]
     
@@ -124,7 +126,8 @@ if __name__ == "__main__":
     time_window = 30
     dataset = AudioDataset(audio_path, analysis_path, time_window=time_window)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
-    techno_audios = write_techno_audios("parent_genres.json", "techno_audios.json")
+    
+    techno_audios = json.load(open("generated_json/techno_audios.json", "r"))
     selected_techno_audios = write_selected_techno_audios_with_duration(techno_audios)
     print(len(selected_techno_audios))
 
@@ -132,6 +135,5 @@ if __name__ == "__main__":
     train_data, test_data = split_train_test_data(selected_techno_audios)
     write_train_test_indices(train_data, test_data)
 
-    # extract_musicnn_features(train_data)
-    # extract_musicnn_features(test_data)
+
         

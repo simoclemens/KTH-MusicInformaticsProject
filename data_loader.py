@@ -6,7 +6,7 @@ import librosa
 from shutil import copyfile 
 
 output_path = "output_folder"  # Change this to the desired output folder
-techno_audios_list = "selected_techno_audios.json"
+techno_audios_list = "generated_json/selected_techno_audios.json"
 
 class AudioDataset(Dataset):
     def __init__(self, audio_folder, analysis_folder, transform=None, time_window=30):
