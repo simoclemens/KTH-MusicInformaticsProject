@@ -23,3 +23,11 @@ def get_optimizer(net, lr, wd, momentum):
     return optimizer
 
 
+def getTop5Correct(predictions, targets):
+    _, top5_preds = predictions.topk(5, 1, largest=True, sorted=True)
+    targets = targets.view(-1, 1).expand_as(top5_preds)
+    correct = top5_preds.eq(targets)
+    tot_correct = correct.sum().float()
+    return tot_correct
+
+

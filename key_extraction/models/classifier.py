@@ -56,15 +56,18 @@ class KeyClassifier(nn.Module):
         super(KeyClassifier, self).__init__()
 
         self.classifier = nn.Sequential(
-            nn.Linear(input_size, 400),
+            nn.Linear(input_size, 100),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(400, 400),
+            nn.Linear(100, 50),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(400, num_classes)
+            nn.Linear(50, num_classes)
         )
 
+        self.norm = nn.BatchNorm1d(input_size)
+
     def forward(self, x):
+        x = self.norm(x)
         x = self.classifier(x)
         return x
