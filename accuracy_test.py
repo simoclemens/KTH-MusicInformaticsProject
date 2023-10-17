@@ -7,44 +7,36 @@ from data_loader import AudioDataLoader, AudioDataset
 audio_path = "FSL10K/audio/wav/"
 analysis_path = "FSL10K/ac_analysis"
 data_json = "generated_json/test_indices.json"
-data_output_json = "generated_json/accuracy_data_filtered.json"
-final_output_json = "generated_json/accuracy_result_filtered.json"
+data_output_json = "generated_json/accuracy_data.json"
+final_output_json = "generated_json/accuracy_result.json"
 
-def accuracy_tests_bpm(filename, samples, sr):
+def accuracy_tests(filename):
     file_path = os.path.join(audio_path, filename)
-    track = TrackFeatures(file_path, samples, sr, beat_mode="dynamic")
+    track = TrackFeatures(file_path, key_mode= "determ",beat_mode="dynamic")
+    track.extractKey()
     track.extractBeat()
+    determ_key = track.key
     dynamic_bpm = track.bpm
-    track = TrackFeatures(file_path, samples, sr, beat_mode="nn")
+    track = TrackFeatures(file_path, key_mode="nn", beat_mode="nn")
+    track.extractKey()
     track.extractBeat()
+    nn_key = track.key
     nn_bpm = track.bpm
 
+    # key accuracy
+    actual_key = get_key_and_bpm(data_json, filename)[0]
+
+    accuracy_determ = sk.metrics.accuracy_score([actual_key], [determ_key])
+    accuracy_nn = sk.metrics.accuracy_score([actual_key], [nn_key])
+
+    # bpm mse
     actual_bpm = get_key_and_bpm(data_json, filename)[1]
 
     mse_dynamic = sk.metrics.mean_squared_error([actual_bpm], [dynamic_bpm])
     mse_nn = sk.metrics.mean_squared_error([actual_bpm], [nn_bpm])
 
-    return actual_bpm, dynamic_bpm, nn_bpm, mse_dynamic, mse_nn
-
-def accuracy_test_key(filename, samples, sr):
-    file_path = os.path.join(audio_path, filename)
-    track = TrackFeatures(file_path, samples, sr, key_mode="determ")
-    track.extractKey()
-    determ_key = track.key
-    determ_key = int(AudioDataset.key_to_label(key=determ_key))
-    track = TrackFeatures(file_path, samples, sr, key_mode="nn")
-    track.extractKey()
-    nn_key = track.key
-    nn_key = int(AudioDataset.key_to_label(key=nn_key))
-
-    actual_key = get_key_and_bpm(data_json, filename)[0]
-    actual_key = int(AudioDataset.key_to_label(key=actual_key))
-
-    accuracy_determ = sk.metrics.accuracy_score([actual_key], [determ_key])
-    accuracy_nn = sk.metrics.accuracy_score([actual_key], [nn_key])
-
-    return actual_key, determ_key, nn_key, accuracy_determ, accuracy_nn
-
+    return actual_key, determ_key, nn_key, accuracy_determ, accuracy_nn, \
+        actual_bpm, dynamic_bpm, nn_bpm, mse_dynamic, mse_nn
 
 
 def compute_accuracy():
@@ -64,17 +56,16 @@ def compute_accuracy():
     for file in selected_files:
         filename = file["filename"]
         complete_filename = audio_path+filename
-        samples, sr = dataset.load_audio(complete_filename)
-        act_bpm, bpm_dyn, bpm_nn, bpm_mse_dynamic, bpm_mse_nn = accuracy_tests_bpm(filename, samples, sr)
-        if bpm_nn != 6000.0:
-            bpm_mses_dynamic.append(bpm_mse_dynamic)
-            bpm_mses_nn.append(bpm_mse_nn)
-            act_key,key_det, key_nn, key_accuracy_determ, key_accuracy_nn = accuracy_test_key(filename, samples, sr)
-            key_accuracies_determ.append(key_accuracy_determ)
-            key_accuracies_nn.append(key_accuracy_nn)
-            json_output.append({"filename": filename, "duration": AudioDataset.get_audio_duration(complete_filename), 
-                                "actual_key": act_key, "key_determ": key_det, "key_nn": key_nn, 
-                                "actual_bpm": act_bpm, "bpm_dynamic": bpm_dyn, "bpm_nn": bpm_nn})
+        act_key, key_det, key_nn, key_acc_det, key_acc_nn,\
+            act_bpm, bpm_dyn, bpm_nn, bpm_mse_dynamic, bpm_mse_nn = accuracy_tests(filename)
+
+        key_accuracies_determ.append(key_acc_det)
+        key_accuracies_nn.append(key_acc_nn)
+        bpm_mses_dynamic.append(bpm_mse_dynamic)
+        bpm_mses_nn.append(bpm_mse_nn)
+        json_output.append({"filename": filename, "duration": AudioDataset.get_audio_duration(complete_filename), 
+                            "actual_key": act_key, "key_determ": key_det, "key_nn": key_nn, 
+                            "actual_bpm": act_bpm, "bpm_dynamic": bpm_dyn, "bpm_nn": bpm_nn})
         
         
     with open(data_output_json, "w") as f:
