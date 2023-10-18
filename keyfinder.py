@@ -2,10 +2,11 @@ import numpy as np
 import librosa
 import librosa.display
 from madmom.features.key import CNNKeyRecognitionProcessor, key_prediction_to_label
+from classifier import KeyClassifier
+import torch
 
 
 def determKeyExtraction(samples, sr, second_key_flag=False):
-
     # compute chromograph
     chromograph = librosa.feature.chroma_cqt(y=samples, sr=sr, bins_per_octave=24)
 
@@ -64,3 +65,28 @@ def nnKeyExtraction(path):
     key = key_prediction_to_label(pred)
     return key
 
+
+def tlKeyExtraction(path):
+    model = KeyClassifier()
+    model.load_state_dict(torch.load('pretrained_model.pth'))
+    model.eval()
+
+    # CONTROLLA CON ALICE
+    input_features = None
+    with torch.no_grad():
+        output = model(input_features)
+
+    key_dict = {0: 'C minor', 1: 'C major',
+                2: 'C# minor', 3: 'C# major',
+                4: 'D minor', 5: 'D major',
+                6: 'D# minor', 7: 'D# major',
+                8: 'E minor', 9: 'E major',
+                10: 'F minor', 11: 'F major',
+                12: 'F# minor', 13: 'F# major',
+                14: 'G minor', 15: 'G major',
+                16: 'G# minor', 17: 'G# major',
+                18: 'A minor', 19: 'A major',
+                20: 'A# minor', 21: 'A# major',
+                22: 'B minor', 23: 'B major'}
+
+    return key_dict[output]
