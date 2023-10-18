@@ -1,3 +1,6 @@
-
-*.json
-*.wav
+FSL10K
+FSL10K.zip
+selected_techno_audios
+selected_techno_audios.zip
+*.pyc
+metadata.json
