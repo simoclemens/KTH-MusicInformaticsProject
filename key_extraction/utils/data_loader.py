@@ -46,7 +46,7 @@ class AudioTrackDataset(Dataset):
         if self.custom_duration:
             output = {'features': np.array(features), 'label': int(self.getKeys(label))}
         else:
-            output = {'features': np.array(features[0]), 'label': int(self.getKeys(label))}
+            output = {'features': np.array(features).reshape(-1,200), 'label': int(self.getKeys(label))}
         return output
 
     def __len__(self):

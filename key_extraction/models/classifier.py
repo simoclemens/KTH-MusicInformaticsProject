@@ -52,22 +52,25 @@ class VGG16(nn.Module):
 
 
 class KeyClassifier(nn.Module):
-    def __init__(self, num_classes=24, input_size=200):
+    def __init__(self, num_classes=24, input_size=200, mode="train",batch_size=32):
         super(KeyClassifier, self).__init__()
 
         self.classifier = nn.Sequential(
             nn.Linear(input_size, 100),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Dropout(),
             nn.Linear(100, 50),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(50, num_classes)
+            nn.Linear(50, num_classes),
+            nn.ReLU()
         )
-
+        self.mode = mode
+        self.batch_size = batch_size
         self.norm = nn.BatchNorm1d(input_size)
 
     def forward(self, x):
-        x = self.norm(x)
+        if self.batch_size > 1:
+            x = self.norm(x)
         x = self.classifier(x)
         return x
