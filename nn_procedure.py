@@ -1,13 +1,14 @@
 class NNMixing:
-    def __init__(self, track_list, number_of_tracks=5, starting_track_idx=0):
+    def __init__(self, track_list, number_of_tracks=5, key_weight=0.25):
         self.track_list = track_list
         self.number_of_tracks = number_of_tracks
-        self.starting_track_idx = starting_track_idx
+        self.key_weight = key_weight
 
     # compute the distance in terms of BPM
     def computeDistance(self, track1, track2):
         bpm_delta = abs(track1.bpm-track2.bpm)
-        return bpm_delta
+        key_delta = self.getCamelotDist(track1.key_idx, track2.key_idx)
+        return bpm_delta + self.key_weight * key_delta
 
     # fond the next track to be put in the lineup considering key and BPM
     def nnSearch(self, track_idx):
@@ -17,10 +18,8 @@ class NNMixing:
         min_idx = None
 
         for i, elem in enumerate(self.track_list):
-            if not elem.selected \
-                    and elem.key_idx in self.getCamelotKeys(current)\
-                    and self.track_list[track_idx].bpm < elem.bpm:
-                dist = self.computeDistance(self.track_list[track_idx], elem)
+            if not elem.selected and current.bpm < elem.bpm:
+                dist = self.computeDistance(current, elem)
                 if dist < min_dist:
                     min_idx = i
                     min_dist = dist
@@ -32,7 +31,9 @@ class NNMixing:
         lineup = []
         min_idx = -1
         min_bpm = float("+inf")
-        for i,track in enumerate(self.track_list):
+        n_songs = len(self.track_list)
+
+        for i, track in enumerate(self.track_list):
             if track.bpm < min_bpm:
                 min_idx = i
                 min_bpm = track.bpm
@@ -43,10 +44,37 @@ class NNMixing:
             self.track_list[current_idx].setSelected()
             current_idx = self.nnSearch(current_idx)
             lineup.append(self.track_list[current_idx])
+
         self.track_list[current_idx].setSelected()
 
         return lineup
 
+    def getCamelotDist(self, current_key, next_key):
+        current_minor = False
+        next_minor = False
+
+        minor_circle = [16, 8, 20, 10, 0, 14, 4, 18, 8, 22, 12, 2]
+        major_circle = [23, 13, 3, 17, 7, 21, 11, 1, 15, 5, 19, 9]
+
+        if current_key in minor_circle:
+            start_idx = minor_circle.index(current_key)
+            current_minor = True
+        else:
+            start_idx = major_circle.index(current_key)
+
+        if next_key in minor_circle:
+            arrive_idx = minor_circle.index(next_key)
+            next_minor = True
+        else:
+            arrive_idx = major_circle.index(next_key)
+
+        abs_dist = abs(start_idx - arrive_idx)
+        circ_dist = min(abs_dist, 12 - abs_dist)
+
+        if current_minor != next_minor:
+            circ_dist += 1
+
+        return circ_dist
 
     def getCamelotKeys(self, current):
         key = current.key_idx
@@ -84,6 +112,9 @@ class NNMixing:
 
 
         return output
+
+
+
 
 
 

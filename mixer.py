@@ -5,9 +5,9 @@ import EQ_utilities, os, librosa
 from pydub import AudioSegment
 
 
-def overwriteAndGetTrackAndAudioSegment(audio, filename):
+def overwriteAndGetTrackAndAudioSegment(audio, filename, beat_mode):
     audio.export(filename, format='wav')
-    trackFeatures = TrackFeatures(filename,beat_mode="nn")
+    trackFeatures = TrackFeatures(filename, beat_mode=beat_mode)
     trackFeatures.extractFeatures()
     audioSegment = AudioSegment.from_wav(trackFeatures.file_name)
     return trackFeatures, audioSegment
@@ -15,9 +15,10 @@ def overwriteAndGetTrackAndAudioSegment(audio, filename):
 
 class Mixer:
 
-    def __init__(self, trackPlaylist, playlistFolder='playlist/'):
+    def __init__(self, trackPlaylist, beat_mode='dynamic', playlistFolder='playlist/'):
         self.trackPlaylist = trackPlaylist
         self.playlistFolder = playlistFolder
+        self.beat_mode = beat_mode
         self.modifiedTracksFolder = self.playlistFolder + 'modifiedTracksPlaylist/'
         self.mixedSegments = []  # Store all the mixed and non-mixed segments
 
@@ -28,7 +29,7 @@ class Mixer:
             track1 = track
             track2 = self.trackPlaylist[idx + 1]
             audio1Exiting, audio2Entering, in_transition_start_ms, out_transition_end_ms, \
-                track2_initial_ms_for_transition = self.createMix(track1=track1, track2=track2, secondsOfTransition=20)
+                track2_initial_ms_for_transition = self.createMix(track1=track1, track2=track2, secondsOfTransition=10)
 
             # Remember: previous 'track2' is now the current one ([idx]), and previous one was shifted by track2_initial_ms_for_transition[idx-1]
             nonMixedSection = audio1Exiting[prev_transition_end_ms:in_transition_start_ms]
@@ -76,7 +77,8 @@ class Mixer:
         # Analyze the part of track1 after the final_segment for exact transition instant
         adjusted_audio1_segment = audio1[len(audio1) - final_segment_length_ms:]
         adjusted_track1_filename = "temp_adjusted_track1.wav"
-        track1_adjusted, _ = overwriteAndGetTrackAndAudioSegment(adjusted_audio1_segment, adjusted_track1_filename)
+        track1_adjusted, _ = overwriteAndGetTrackAndAudioSegment(adjusted_audio1_segment, adjusted_track1_filename,
+                                                                 self.beat_mode)
         relative_out_track_exiting_second, _ = self.closest(track1_adjusted.beat, 0, False)
 
         # Need to add to the previous one to account for the relative out track instant
@@ -131,19 +133,3 @@ class Mixer:
         else:
             for filename in os.listdir(folderName):
                 os.remove(os.path.join(folderName, filename))
-
-
-def loadTrack(filename):
-    trackFeatures = TrackFeatures(filename, beat_mode="nn")
-    trackFeatures.extractFeatures()
-    return trackFeatures
-
-
-track_selection = [
-    loadTrack("playlist/MOI004 A (mp3cut.net).wav"),
-    loadTrack("playlist/Inside Out (mp3cut.net).wav"),
-    loadTrack("playlist/Bitter Sweet (mp3cut.net).wav")
-]
-
-mixer = Mixer(track_selection)
-mixer.mixPlaylist()
