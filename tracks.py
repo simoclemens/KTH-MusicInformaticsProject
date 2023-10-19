@@ -1,4 +1,4 @@
-from keyfinder import determKeyExtraction, nnKeyExtraction
+from keyfinder import determKeyExtraction, nnKeyExtraction, tlKeyExtraction
 from beatfinder import dynamicBeatExtraction, nnBeatExtraction
 import librosa
 
@@ -12,7 +12,7 @@ class TrackFeatures:
         self.duration = len(self.samples) / self.sr
         self.selected = False
         self.key = None
-        self.key_label = None
+        self.key_idx = None
         self.second_key = None
         self.bpm = None
         self.beat = None
@@ -45,6 +45,24 @@ class TrackFeatures:
             self.key = determKeyExtraction(self.samples, self.sr)
         elif self.key_mode == "nn":
             self.key = nnKeyExtraction(self.file_name)
+        elif self.key_mode == "tl":
+            self.key = tlKeyExtraction(self.file_name)
+
+        key_dict = {'C minor': 0, 'C major': 1,
+                    'C# minor': 2, 'C# major': 3,
+                    'D minor': 4, 'D major': 5,
+                    'D# minor': 6, 'D# major': 7,
+                    'E minor': 8, 'E major': 9,
+                    'F minor': 10, 'F major': 11,
+                    'F# minor': 12, 'F# major': 13,
+                    'G minor': 14, 'G major': 15,
+                    'G# minor': 16, 'G# major': 17,
+                    'A minor': 18, 'A major': 19,
+                    'A# minor': 20, 'A# major': 21,
+                    'B minor': 22, 'B major': 23}
+
+        self.key_idx = key_dict[self.key]
+
 
 
 
