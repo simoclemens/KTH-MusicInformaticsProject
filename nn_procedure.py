@@ -41,11 +41,9 @@ class NNMixing:
         current_idx = min_idx
 
         for i in range(self.number_of_tracks):
+            lineup.append(self.track_list[current_idx])
             self.track_list[current_idx].setSelected()
             current_idx = self.nnSearch(current_idx)
-            lineup.append(self.track_list[current_idx])
-
-        self.track_list[current_idx].setSelected()
 
         return lineup
 
