@@ -6,7 +6,7 @@ from musicnn.extractor import extractor
 
 audio_path = "FSL10K/audio/wav"
 analysis_path = "FSL10K/ac_analysis"
-min_target_duration = 6
+min_target_duration = 5
 max_target_duration = 30
 
 
@@ -39,15 +39,51 @@ def get_audio_duration_in_seconds(filename):
         duration = AudioDataset.get_audio_duration(file_path)
     return duration
 
-def split_train_test_data(data, split_ratio=0.8):
+def split_train_test_data(data):
     num_samples = len(data)
-    num_train_samples = int(num_samples * split_ratio)
-    random.shuffle(data)
 
-    train_data = data[:num_train_samples]
-    test_data = data[num_train_samples:]
+    # split train data this way: test > 10s, train < 10s
+    train_data = []
+    test_data = []
 
+    for audio in data:
+        audio_duration = get_audio_duration_in_seconds(audio)
+        if audio_duration > 15:
+            test_data.append(audio)
+        else:
+            train_data.append(audio)
+    print("Train data: ", len(train_data), "Test data: ", len(test_data))
+    print("Percentage test: " , len(test_data)/len(data))
     return train_data, test_data
+
+def split_into_segments(train_indices_file, new_train_indices_file="train_indices_features_segments.json"):
+    train_data_with_features = json.load(open(train_indices_file, "r"))
+    print("Train data with features: ", len(train_data_with_features))
+    new_data_with_features = []
+    for audio in train_data_with_features:
+        features = audio["features"]
+        if not isinstance(features, float):
+            print("File: ", audio["filename"], "Num segments: ", len(features))
+            for feature_seg in features:
+                print("Feature seg shape: ", len(feature_seg))
+                new_entry = {
+                    "index": audio["index"],
+                    "filename": audio["filename"],
+                    "duration_seconds": audio["duration_seconds"],
+                    "key": audio["key"],
+                    "bpm": audio["bpm"],
+                    "features": feature_seg           
+                }
+                new_data_with_features.append(new_entry)
+
+    train_data_with_features = new_data_with_features
+
+    with open(new_train_indices_file, "w") as f:
+        json.dump(train_data_with_features, f)
+        f.close()
+
+    return train_data_with_features
+
 
 def write_techno_audios(genres_file_path, techno_audios_file_path="techno_audios.json"):
     with open(genres_file_path) as f:
@@ -85,7 +121,7 @@ def write_selected_techno_audios_with_duration(techno_audios, sel_techno_audios_
     return [list(audio.keys())[0] for audio in selected_techno_audios_with_duration]
 
 
-def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features.json", test_index_file="test_indices_features.json"):
+def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features_15s.json", test_index_file="test_indices_features_15s.json"):
     print("Train data: ", len(train_data), "Test data: ", len(test_data))
 
     train_data_dict = [{"index": dataset.audio_file_list.index(file),
@@ -127,13 +163,13 @@ if __name__ == "__main__":
     dataset = AudioDataset(audio_path, analysis_path, time_window=time_window)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
     
-    techno_audios = json.load(open("generated_json/techno_audios.json", "r"))
-    selected_techno_audios = write_selected_techno_audios_with_duration(techno_audios)
-    print(len(selected_techno_audios))
+    # techno_audios = json.load(open("generated_json/techno_audios.json", "r"))
+    # selected_techno_audios = write_selected_techno_audios_with_duration(techno_audios)
 
-    write_techno_features_to_file(selected_techno_audios)
-    train_data, test_data = split_train_test_data(selected_techno_audios)
-    write_train_test_indices(train_data, test_data)
+    # write_techno_features_to_file(selected_techno_audios)
+    # train_data, test_data = split_train_test_data(selected_techno_audios)
+    # write_train_test_indices(train_data, test_data)
+    split_into_segments("generated_json/train_test_features_15s/train_indices_features.json", "generated_json/train_test_features_15s/train_indices_features_segments.json")
 
 
         

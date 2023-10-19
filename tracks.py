@@ -49,16 +49,16 @@ class TrackFeatures:
             self.key = tlKeyExtraction(self.file_name)
 
         key_dict = {'C minor': 0, 'C major': 1,
-                    'C# minor': 2, 'C# major': 3,
+                    'C# minor': 2, 'Db minor': 2, 'C# major': 3, 'Db major': 3,
                     'D minor': 4, 'D major': 5,
-                    'D# minor': 6, 'D# major': 7,
+                    'D# minor': 6, 'Eb minor': 6, 'D# major': 7, 'Eb major': 7,
                     'E minor': 8, 'E major': 9,
                     'F minor': 10, 'F major': 11,
-                    'F# minor': 12, 'F# major': 13,
+                    'F# minor': 12, 'Gb minor': 12, 'F# major': 13, 'Gb major': 13,
                     'G minor': 14, 'G major': 15,
-                    'G# minor': 16, 'G# major': 17,
+                    'G# minor': 16, 'Ab minor': 16, 'G# major': 17, 'Ab major': 17,
                     'A minor': 18, 'A major': 19,
-                    'A# minor': 20, 'A# major': 21,
+                    'A# minor': 20, 'Bb minor': 20, 'A# major': 21, 'Bb major': 21,
                     'B minor': 22, 'B major': 23}
 
         self.key_idx = key_dict[self.key]
