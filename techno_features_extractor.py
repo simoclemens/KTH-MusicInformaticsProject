@@ -1,12 +1,13 @@
 from data_loader import AudioDataLoader, AudioDataset
 import json
 import os
-import random
+import time
 from musicnn.extractor import extractor
 
 audio_path = "FSL10K/audio/wav"
 analysis_path = "FSL10K/ac_analysis"
 min_target_duration = 5
+min_test_duration = 25
 max_target_duration = 30
 
 
@@ -18,7 +19,7 @@ def complete_audio_file_name(uncomplete_file_name):
             return file_name
 
 def extract_musicnn_features_with_duration(audio_file, duration_in_seconds):
-    taggram, tags, features = extractor(audio_path+"/"+audio_file, model='MTT_musicnn',input_length=duration_in_seconds, extract_features=True)
+    _, _, features = extractor(audio_path+"/"+audio_file, model='MTT_musicnn',input_length=duration_in_seconds, extract_features=True)
     features_pen = features['penultimate']
     features_pen = features_pen.tolist()
     return features_pen
@@ -42,13 +43,12 @@ def get_audio_duration_in_seconds(filename):
 def split_train_test_data(data):
     num_samples = len(data)
 
-    # split train data this way: test > 10s, train < 10s
     train_data = []
     test_data = []
 
     for audio in data:
         audio_duration = get_audio_duration_in_seconds(audio)
-        if audio_duration > 15:
+        if audio_duration > min_test_duration:
             test_data.append(audio)
         else:
             train_data.append(audio)
@@ -121,7 +121,7 @@ def write_selected_techno_audios_with_duration(techno_audios, sel_techno_audios_
     return [list(audio.keys())[0] for audio in selected_techno_audios_with_duration]
 
 
-def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features_15s.json", test_index_file="test_indices_features_15s.json"):
+def write_train_test_indices(train_data, test_data, train_index_file="train_indices_features_25s.json", test_index_file="test_indices_features_25s.json"):
     print("Train data: ", len(train_data), "Test data: ", len(test_data))
 
     train_data_dict = [{"index": dataset.audio_file_list.index(file),
@@ -158,18 +158,44 @@ def write_techno_features_to_file(techno_audios, techno_features_file_name = "se
         json.dump(techno_audios_features, f)
         f.close()
 
+def write_all_musicnn_features_to_file(all_audios,
+                                       all_features_file_name = "generated_json/musicnn_features.json", 
+                                       all_features_with_duration_file_name = "generated_json/musicnn_features_duration.json"):
+    features_list= []
+    features_with_duration_list = []
+    for file in all_audios:
+        filename = str(file + ".wav.wav")
+        features = extract_musicnn_features(filename)
+        features_with_duration = extract_musicnn_features_with_duration(filename, get_audio_duration_in_seconds(file))
+        features_dict = {"filename" : filename, "features" : features}
+        features_with_duration_dict = {"filename" : filename, "features" : features_with_duration}
+        features_list.append(features_dict)
+        features_with_duration_list.append(features_with_duration_dict)
+
+    with open(all_features_file_name, "w") as f:
+        json.dump(features_list, f)
+        f.close()
+
+    with open(all_features_with_duration_file_name, "w") as f:
+        json.dump(features_with_duration_list, f)
+        f.close()
+    
+
+
 if __name__ == "__main__":
+    start_time = time.time()
     time_window = 30
     dataset = AudioDataset(audio_path, analysis_path, time_window=time_window)
     dataloader = AudioDataLoader(dataset, batch_size=32, shuffle=False)
     
-    # techno_audios = json.load(open("generated_json/techno_audios.json", "r"))
+    techno_audios = json.load(open("generated_json/techno_audios.json", "r"))
     # selected_techno_audios = write_selected_techno_audios_with_duration(techno_audios)
 
+    selected_techno_audios= json.load(open("generated_json/selected_techno_audios.json", "r"))
+    write_all_musicnn_features_to_file(selected_techno_audios)
     # write_techno_features_to_file(selected_techno_audios)
     # train_data, test_data = split_train_test_data(selected_techno_audios)
     # write_train_test_indices(train_data, test_data)
-    split_into_segments("generated_json/train_test_features_15s/train_indices_features.json", "generated_json/train_test_features_15s/train_indices_features_segments.json")
-
-
-        
+    # split_into_segments("generated_json/train_test_features_25s/train_indices_features.json", "generated_json/train_test_features_25s/train_indices_features_segments.json")
+    # split_into_segments("generated_json/train_test_features_25s/test_indices_features.json", "generated_json/train_test_features_25s/test_indices_features_segments.json")
+    print("Total time: ", time.time()/60-start_time/60)
