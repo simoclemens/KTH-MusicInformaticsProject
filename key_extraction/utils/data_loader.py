@@ -22,7 +22,7 @@ class AudioTrackDataset(Dataset):
             file_name = "test_" + name
 
         if self.custom_duration:
-            file_name += "_with_duration"
+            file_name += "_25s"
 
         file_name += ".json"
 

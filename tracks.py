@@ -46,7 +46,7 @@ class TrackFeatures:
         elif self.key_mode == "nn":
             self.key = nnKeyExtraction(self.file_name)
         elif self.key_mode == "tl":
-            self.key = tlKeyExtraction(self.file_name)
+            self.key = tlKeyExtraction(self.file_name, self.duration)
 
         key_dict = {'C minor': 0, 'C major': 1,
                     'C# minor': 2, 'Db minor': 2, 'C# major': 3, 'Db major': 3,

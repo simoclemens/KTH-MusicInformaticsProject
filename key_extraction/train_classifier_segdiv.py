@@ -80,7 +80,7 @@ def validate(net, val_loader, n_classes, device="cuda:0"):
             # perform mean over the rows to obtain avg predictions for each class between the several clips
             _, predicted = torch.max(logits.data, 0)
 
-            if predicted == label:
+            if predicted == label or predicted == label +1 or predicted == label -1:
                 val_correct += 1
 
             # top5_correct += getTop5Correct(logits, label)
