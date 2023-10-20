@@ -15,12 +15,13 @@ def overwriteAndGetTrackAndAudioSegment(audio, filename, beat_mode):
 
 class Mixer:
 
-    def __init__(self, trackPlaylist, beat_mode='dynamic', playlistFolder='playlist/'):
+    def __init__(self, trackPlaylist, beat_mode='dynamic', playlistFolder='playlist/', s_transition=25):
         self.trackPlaylist = trackPlaylist
         self.playlistFolder = playlistFolder
         self.beat_mode = beat_mode
-        self.modifiedTracksFolder = self.playlistFolder + 'modifiedTracksPlaylist/'
+        self.modifiedTracksFolder = self.playlistFolder + 'modifiedTracks/'
         self.mixedSegments = []  # Store all the mixed and non-mixed segments
+        self.s_transition = s_transition
 
     def mixPlaylist(self):
         prev_transition_end_ms = 0
@@ -29,7 +30,8 @@ class Mixer:
             track1 = track
             track2 = self.trackPlaylist[idx + 1]
             audio1Exiting, audio2Entering, in_transition_start_ms, out_transition_end_ms, \
-                track2_initial_ms_for_transition = self.createMix(track1=track1, track2=track2, secondsOfTransition=10)
+                track2_initial_ms_for_transition = self.createMix(track1=track1, track2=track2,
+                                                                  secondsOfTransition=self.s_transition)
 
             # Remember: previous 'track2' is now the current one ([idx]), and previous one was shifted by track2_initial_ms_for_transition[idx-1]
             nonMixedSection = audio1Exiting[prev_transition_end_ms:in_transition_start_ms]
@@ -57,7 +59,7 @@ class Mixer:
         full_mix = reduce(lambda segment1, segment2: segment1 + segment2, self.mixedSegments)
         full_mix.export(self.modifiedTracksFolder + 'full_mix.wav', format="wav")
 
-    def createMix(self, track1, track2, secondsOfTransition=18):
+    def createMix(self, track1, track2, secondsOfTransition):
         self.__createFolder(self.modifiedTracksFolder)
         return self.mixTwoTracks(track1=track1, track2=track2, secondsOfTransition=secondsOfTransition)
 

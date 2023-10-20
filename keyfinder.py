@@ -4,6 +4,7 @@ import librosa.display
 from madmom.features.key import CNNKeyRecognitionProcessor, key_prediction_to_label
 from classifier import KeyClassifier
 import torch
+from musicnn.extractor import extractor
 
 
 def determKeyExtraction(samples, sr, second_key_flag=False):
@@ -66,15 +67,22 @@ def nnKeyExtraction(path):
     return key
 
 
-def tlKeyExtraction(path):
+def tlKeyExtraction(path, duration):
     model = KeyClassifier()
-    model.load_state_dict(torch.load('pretrained_model.pth'))
+    model.load_state_dict(torch.load('model_weights.pth'))
     model.eval()
 
-    # CONTROLLA CON ALICE
-    input_features = None
+    _, _, input_features = extractor(path,
+                                     model='MTT_musicnn',
+                                     input_length=duration,
+                                     extract_features=True)
+
+    input_tensor = torch.tensor(input_features).to(torch.float32)
+
     with torch.no_grad():
-        output = model(input_features)
+        output = model(input_tensor)
+
+    pred = torch.argmax(output)
 
     key_dict = {0: 'C minor', 1: 'C major',
                 2: 'C# minor', 3: 'C# major',
@@ -89,4 +97,4 @@ def tlKeyExtraction(path):
                 20: 'A# minor', 21: 'A# major',
                 22: 'B minor', 23: 'B major'}
 
-    return key_dict[output]
+    return key_dict[pred.item()]

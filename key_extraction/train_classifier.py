@@ -41,9 +41,13 @@ def train(file, net, train_loader, val_loader, optimizer, cost_function, n_class
         file.write('[{}/{}] ITERATION COMPLETED\n'.format(iteration, training_iterations))
         file.write('TEST: acc@top1={:.2f}%  acc@top5={:.2f}%\n\n'.format(test_metrics['top1'] * 100, 0))
 
-        if test_metrics['top5'] >= top_accuracy:
-            top_accuracy = test_metrics['top5']
-            print('ITERATION:' + str(iteration) + ' - BEST ACCURACY: {:.2f}'.format(top_accuracy * 100))
+        if test_metrics['top1'] > top_accuracy:
+            top_accuracy = test_metrics['top1']
+            print('ITERATION:' + str(iteration) + ' - BEST ACCURACY: {:.2f}'.format(top_accuracy * 100) +
+                  ' - BEST ACCURACY: {:.2f}'.format(test_metrics['top5'] * 100))
+
+            # Save model weights and optimizer state
+            torch.save(net.state_dict(), "model_weights.pth")
         if iteration % 10 == 0:
             print('ITERATION:' + str(iteration))
 
@@ -96,7 +100,7 @@ def validate(net, val_loader, n_classes, batch_size=32, device="cuda:0"):
 def main():
     device = "cuda:0"
 
-    lr = 0.05
+    lr = 0.02
     wd = 1e-7
     momentum = 0.9
     loss_weight = 1

@@ -1,14 +1,15 @@
 class NNMixing:
-    def __init__(self, track_list, number_of_tracks=5, key_weight=0.25):
+    def __init__(self, track_list, number_of_tracks=5, bpm_weight=1, key_weight=1):
         self.track_list = track_list
         self.number_of_tracks = number_of_tracks
+        self.bpm_weight = bpm_weight
         self.key_weight = key_weight
 
     # compute the distance in terms of BPM
     def computeDistance(self, track1, track2):
         bpm_delta = abs(track1.bpm-track2.bpm)
         key_delta = self.getCamelotDist(track1.key_idx, track2.key_idx)
-        return bpm_delta + self.key_weight * key_delta
+        return self.bpm_weight*bpm_delta + self.key_weight * key_delta
 
     # fond the next track to be put in the lineup considering key and BPM
     def nnSearch(self, track_idx):
